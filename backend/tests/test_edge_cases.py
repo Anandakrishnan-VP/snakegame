@@ -16,12 +16,12 @@ from backend.services.intent_router import route_intent
 from backend.services.llm_groq import deterministic_synthesis
 
 def test_1_directory_without_deep_clause():
-    # IS 1489 (PPC Cement) has directory record but no Tier B deep clause chunks
-    chunks = get_flagship_chunks("IS 1489 (Part 1):2015")
+    # IS 12269 (53 Grade Cement) has directory record but no Tier B deep clause chunks
+    chunks = get_flagship_chunks("IS 12269:2013")
     assert len(chunks) == 0, "Non-flagship standard should not have deep clause chunks"
     
-    chain = run_compliance_chain("PPC cement fly ash")
-    assert chain["standard"]["is_code"] == "IS 1489 (Part 1):2015"
+    chain = run_compliance_chain("53 grade cement opc")
+    assert chain["standard"]["is_code"] == "IS 12269:2013"
     assert chain["evidence_tag"]["source_type"] == "directory"
     assert "Directory" in chain["evidence_tag"]["clause_number"]
     print("[PASS] Edge Case 1: Directory query without deep clause coverage")

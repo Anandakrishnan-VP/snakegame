@@ -28,7 +28,7 @@ from backend.services.multilingual import (
     resolve_language,
     translate_to_english_if_needed
 )
-from backend.services.intent_router import route_intent
+from backend.services.intent_router import route_intent, is_general_inquiry
 from backend.services.module1_directory import search_directory, get_standard_by_code, get_flagship_chunks
 from backend.services.module3_certification import get_certification_steps, get_scheme_overview
 from backend.services.module4_verification import verify_code
@@ -40,6 +40,7 @@ from backend.services.transcription import transcribe_audio
 from backend.services.journey_service import start_journey, update_step_status, get_journey
 from backend.services.journey_pdf import generate_roadmap_pdf
 from backend.services.conversational_handler import classify_conversational, generate_conversational_response
+from backend.services.vlm_service import analyze_image_with_vlm
 
 app = FastAPI(
     title="BIS Saathi API",
@@ -123,7 +124,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Request/Response Schemas
 class ChatRequest(BaseModel):
-    query: str
+    query: Optional[str] = ""
+    image_base64: Optional[str] = None
     session_id: Optional[str] = None
     persona: Optional[str] = None # 'consumer', 'msme', 'general' (defaults to session persona if None)
     language: Optional[str] = "auto" # 'auto', 'en', 'hi'
@@ -133,12 +135,36 @@ class ChatRequest(BaseModel):
 class VerifyRequest(BaseModel):
     code: str
 
+class VisionAnalyzeRequest(BaseModel):
+    image_base64: str
+    query: Optional[str] = ""
+    persona: Optional[str] = "general"
+    language: Optional[str] = "en"
+
 @app.get("/api")
 @app.get("/api/")
 @app.get("/health")
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "BIS Saathi API"}
+
+@app.post("/api/vision/analyze")
+def api_vision_analyze(req: VisionAnalyzeRequest):
+    """
+    Direct Vision-Language Model endpoint.
+    Visually inspects photographs for products, labels, and BIS marks.
+    """
+    lang = req.language or "en"
+    if req.query and req.language == "auto":
+        lang = resolve_language(req.query, explicit_lang=req.language)
+    elif lang == "auto":
+        lang = "en"
+    return analyze_image_with_vlm(
+        image_base64=req.image_base64,
+        user_query=req.query,
+        persona=req.persona or "general",
+        target_lang=lang
+    )
 
 @app.post("/api/transcribe")
 async def api_transcribe(
@@ -213,6 +239,10 @@ def augment_query_if_followup(query: str, active_topic: Optional[str]) -> str:
     if classify_conversational(query):
         return query
 
+    # General institutional, app, or portal inquiries should never be augmented with product topics
+    if is_general_inquiry(query):
+        return query
+
     lower = query.lower().strip()
 
     # 1. Anaphora / Pronoun check: explicit reference to previous topic
@@ -250,7 +280,45 @@ def api_chat(req: ChatRequest):
     8. Groq synthesis, cache & session update
     """
     session_id = req.session_id or str(uuid.uuid4())
-    raw_query = req.query.strip()
+    raw_query = (req.query or "").strip()
+
+    # Multimodal VLM Inspection Branch
+    if req.image_base64 and req.image_base64.strip():
+        session = get_or_create_session(session_id, persona=req.persona or "general", language=req.language or "en")
+        current_persona = req.persona or session.get("persona", "general")
+        resolved_lang = resolve_language(raw_query, explicit_lang=req.language) if raw_query else (req.language or "en")
+        if resolved_lang == "auto":
+            resolved_lang = "en"
+
+        vlm_res = analyze_image_with_vlm(
+            image_base64=req.image_base64,
+            user_query=raw_query,
+            persona=current_persona,
+            target_lang=resolved_lang
+        )
+
+        detected_topic = vlm_res.get("active_topic") or session.get("active_topic")
+        turn_rec = {
+            "query": raw_query or "[Uploaded Product Image for Inspection]",
+            "intent": "VLM_IMAGE_INSPECTION",
+            "active_topic": detected_topic,
+            "language": resolved_lang
+        }
+        update_session(
+            session_id,
+            active_topic=detected_topic,
+            persona=current_persona,
+            language=resolved_lang,
+            turn_record=turn_rec,
+            increment_turn=True
+        )
+        vlm_res["session_id"] = session_id
+        vlm_res["resolved_language"] = resolved_lang
+        vlm_res["active_topic"] = detected_topic
+        vlm_res["from_cache"] = False
+        vlm_res["persona"] = current_persona
+        return vlm_res
+
     if not raw_query:
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
@@ -416,20 +484,65 @@ def api_chat(req: ChatRequest):
     elif intent == "GENERAL_FAQ":
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT question, answer, source_url FROM faq")
+        cursor.execute("SELECT category, question, answer, source_url FROM faq")
         faqs = [dict(r) for r in cursor.fetchall()]
         conn.close()
+
+        q_lower = augmented_query.lower()
+        source_url = "https://www.bis.gov.in"
+        source_ref = "Bureau of Indian Standards (BIS Act 2016)"
+
+        if any(w in q_lower for w in ["app", "mobile", "bis care", "android", "ios", "play store", "download"]):
+            source_url = "https://www.bis.gov.in/consumer-affairs/bis-care-app/"
+            source_ref = "BIS Care App (Official Mobile App)"
+        elif any(w in q_lower for w in ["manak online", "manakonline", "portal", "website"]):
+            source_url = "https://www.manakonline.in"
+            source_ref = "BIS Manak Online Portal"
+        elif any(w in q_lower for w in ["hallmark", "huid", "gold"]):
+            source_url = "https://www.bis.gov.in/hallmarking/overview/"
+            source_ref = "BIS Gold Hallmarking Scheme"
+        elif any(w in q_lower for w in ["isi mark", "isi"]):
+            source_url = "https://www.bis.gov.in/product-certification/overview/"
+            source_ref = "BIS Scheme-I (ISI Mark)"
+        elif any(w in q_lower for w in ["complaint", "grievance"]):
+            source_url = "https://www.bis.gov.in/consumer-affairs/grievance-redressal/"
+            source_ref = "BIS Consumer Grievance Portal"
+
         context_payload = {
             "intent": "GENERAL_FAQ",
             "faqs": faqs,
+            "institutional_overview": {
+                "organization": "Bureau of Indian Standards (BIS)",
+                "statutory_mandate": "National Standard Body of India established under the BIS Act 2016 (originally founded as the Indian Standards Institution - ISI in 1947), operating under the Ministry of Consumer Affairs, Food & Public Distribution, Government of India.",
+                "headquarters": "Manak Bhavan, 9 Bahadur Shah Zafar Marg, New Delhi 110002.",
+                "official_app": {
+                    "app_name": "BIS Care App",
+                    "platforms": "Available for free on Android (Google Play Store) and iOS (Apple App Store)",
+                    "purpose": "Official mobile app for Indian citizens and consumers to verify product quality marks and report counterfeits.",
+                    "features": [
+                        "Verify ISI Mark authenticity by entering the 7-digit CM/L licence number.",
+                        "Verify Gold Hallmark purity, fineness, and registered jeweller by entering the 6-character alphanumeric HUID code.",
+                        "Verify Compulsory Registration Scheme (CRS) electronics by entering the 8-digit R-number.",
+                        "Locate BIS-recognized and accredited testing laboratories across India.",
+                        "Lodge consumer quality complaints and track grievance redressal status directly with BIS officers."
+                    ],
+                    "download_url": "https://www.bis.gov.in/consumer-affairs/bis-care-app/"
+                },
+                "official_portals": [
+                    {"name": "BIS Official Portal", "url": "https://www.bis.gov.in", "purpose": "Standards catalog, QCO notifications, institutional information"},
+                    {"name": "Manak Online", "url": "https://www.manakonline.in", "purpose": "e-BIS online licensing (Form V), audit tracking, laboratory testing, standards sales"},
+                    {"name": "CRS Portal", "url": "https://www.crsbis.in", "purpose": "Compulsory Registration Scheme for electronics, IT goods, and solar modules"}
+                ]
+            },
             "persona": current_persona,
             "evidence_tag": {
                 "source_type": "faq",
-                "reference": "BIS Citizen Charter & Consumer FAQ",
+                "reference": source_ref,
                 "status": "confirmed",
-                "clause_summary": "Guidelines sourced directly from BIS Consumer Affairs and Training manuals.",
-                "verbatim_excerpt": "Guidelines sourced directly from BIS Consumer Affairs and Training manuals.",
-                "source_url": "https://www.bis.gov.in/consumer-affairs/"
+                "clause_number": "Citizen Advisory",
+                "clause_summary": f"Official institutional guidelines and services of the {source_ref}.",
+                "verbatim_excerpt": f"Official institutional guidelines and services of the {source_ref}.",
+                "source_url": source_url
             }
         }
 

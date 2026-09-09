@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { 
   MessageSquare, 
   ShieldCheck, 
@@ -24,6 +24,7 @@ import LabFinder from './components/LabFinder';
 import DirectoryBrowser from './components/DirectoryBrowser';
 import SourceInspectorModal from './components/SourceInspectorModal';
 import VoiceModal from './components/VoiceModal';
+import Footer from './components/Footer';
 import { SUPPORTED_LANGUAGES, getTranslation } from './i18n/translations';
 import { API_BASE_URL } from './api/config';
 
@@ -84,16 +85,21 @@ export default function App() {
   const handleSelectStandardFromDirectory = (standard) => {
     setInitialChatQuery(`What are the testing and certification requirements for ${standard.is_code} (${standard.title})?`);
     setActiveTab('chat');
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
+
+  // Robust zero-latency scroll reset before browser paints to prevent any footer flicker/blink
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeTab]);
 
   return (
     <div style={{
-      height: activeTab === 'chat' ? '100vh' : 'auto',
       minHeight: '100vh',
-      maxHeight: activeTab === 'chat' ? '100vh' : 'none',
       display: 'flex',
-      flexDirection: 'column',
-      overflow: activeTab === 'chat' ? 'hidden' : 'visible'
+      flexDirection: 'column'
     }}>
       {/* Top Navbar */}
       <header style={{
@@ -108,50 +114,37 @@ export default function App() {
         transition: 'background-color 0.3s ease, border-color 0.3s ease'
       }}>
         <div style={{
-          maxWidth: '1280px',
+          maxWidth: '1440px',
           margin: '0 auto',
-          padding: '12px 24px',
+          padding: '8px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
           gap: '16px'
         }}>
           {/* Logo & Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '10px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '9px',
               background: 'linear-gradient(135deg, #111315 0%, #0d9488 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
-              boxShadow: '0 4px 14px rgba(13, 148, 136, 0.25)'
+              boxShadow: '0 3px 10px rgba(13, 148, 136, 0.25)',
+              flexShrink: 0
             }}>
-              <Award size={24} />
+              <Award size={20} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="font-heading" style={{ fontSize: '1.35rem', color: 'var(--text-primary)', fontWeight: 800 }}>
-                  BIS Saathi
-                </span>
-                <span style={{
-                  fontSize: '0.7rem',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  background: 'rgba(13, 148, 136, 0.12)',
-                  color: 'var(--accent-aqua)',
-                  fontWeight: 700,
-                  border: '1px solid rgba(13, 148, 136, 0.28)'
-                }}>
-                  SIH26107
-                </span>
-              </div>
-              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {t('subtitle')}
-              </p>
+              <span className="font-heading" style={{ fontSize: '1.12rem', color: 'var(--text-primary)', fontWeight: 800, display: 'block', lineHeight: 1.1 }}>
+                BIS Saathi
+              </span>
+              <span style={{ fontSize: '0.64rem', color: 'var(--text-muted)', display: 'block', marginTop: '1px' }}>
+                National Standards &amp; Compliance Intelligence
+              </span>
             </div>
           </div>
 
@@ -159,12 +152,12 @@ export default function App() {
           <nav style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '3px',
             background: 'var(--bg-surface)',
-            padding: '4px',
-            borderRadius: '12px',
+            padding: '3px',
+            borderRadius: '11px',
             border: '1px solid var(--border-subtle)',
-            flexWrap: 'wrap'
+            flexShrink: 0
           }}>
             {[
               { id: 'chat', labelKey: 'tab_chat', icon: MessageSquare },
@@ -178,23 +171,25 @@ export default function App() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => { setActiveTab(tab.id); window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 14px',
+                    gap: '5px',
+                    height: '30px',
+                    padding: '0 11px',
                     borderRadius: '8px',
                     border: 'none',
                     background: isActive ? 'var(--btn-primary-bg)' : 'transparent',
                     color: isActive ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
                     fontWeight: 600,
-                    fontSize: '0.82rem',
+                    fontSize: '0.78rem',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <Icon size={15} />
+                  <Icon size={14} />
                   <span>{t(tab.labelKey)}</span>
                 </button>
               );
@@ -202,7 +197,7 @@ export default function App() {
           </nav>
 
           {/* Right Controls: Global Language Selector, Theme Switcher & Status */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {/* Theme Switcher Toggle */}
             <button
               onClick={toggleTheme}
@@ -211,13 +206,15 @@ export default function App() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '7px 10px',
+                width: '36px',
+                height: '36px',
                 borderRadius: '10px',
                 background: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 color: 'var(--text-primary)',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                flexShrink: 0
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--accent-aqua)';
@@ -229,9 +226,9 @@ export default function App() {
               }}
             >
               {theme === 'light' ? (
-                <Moon size={16} color="var(--primary-cod-gray)" />
+                <Moon size={15} color="var(--primary-cod-gray)" />
               ) : (
-                <Sun size={16} color="#fbbf24" />
+                <Sun size={15} color="#fbbf24" />
               )}
             </button>
 
@@ -240,13 +237,15 @@ export default function App() {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              height: '36px',
               background: 'var(--bg-surface)',
-              padding: '4px 10px',
+              padding: '0 10px',
               borderRadius: '10px',
               border: '1px solid var(--border-subtle)',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+              flexShrink: 0
             }}>
-              <Globe size={15} color="var(--accent-aqua)" />
+              <Globe size={14} color="var(--accent-aqua)" />
               <select
                 value={currentLang}
                 onChange={(e) => setCurrentLang(e.target.value)}
@@ -254,7 +253,7 @@ export default function App() {
                   background: 'transparent',
                   border: 'none',
                   color: 'var(--text-primary)',
-                  fontSize: '0.82rem',
+                  fontSize: '0.8rem',
                   fontWeight: 600,
                   outline: 'none',
                   cursor: 'pointer'
@@ -267,43 +266,29 @@ export default function App() {
                 ))}
               </select>
             </div>
-
-            {/* Backend Status Indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: apiStatus === 'online' ? '#10b981' : '#ef4444',
-                boxShadow: apiStatus === 'online' ? '0 0 10px #10b981' : '0 0 10px #ef4444'
-              }} />
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {apiStatus === 'online' ? t('status_online') : t('status_connecting')}
-              </span>
-            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
       <main style={{
-        flex: 1,
-        padding: activeTab === 'chat' ? '10px 20px 14px 20px' : '24px 20px',
+        flex: '1 0 auto',
+        minHeight: 'calc(100vh - 53px)',
+        boxSizing: 'border-box',
+        padding: activeTab === 'chat' ? '8px 20px' : '24px 20px',
         maxWidth: activeTab === 'chat' ? '1100px' : '1280px',
         margin: '0 auto',
         width: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0,
-        overflow: activeTab === 'chat' ? 'hidden' : 'visible'
+        flexDirection: 'column'
       }}>
-        {/* Chat tab is kept mounted so navigating away and returning preserves chat conversation */}
+        {/* Chat tab fills viewport height minus header and padding so footer is off-screen until scrolled */}
         <div style={{
           display: activeTab === 'chat' ? 'flex' : 'none',
           flexDirection: 'column',
-          height: '100%',
-          flex: 1,
-          minHeight: 0
+          height: 'calc(100vh - 69px)',
+          minHeight: '520px',
+          flex: 1
         }}>
           <ChatView
             onInspectEvidence={handleInspectEvidence}
@@ -311,6 +296,7 @@ export default function App() {
             onStartJourney={(standardCode) => {
               setJourneyStandardId(standardCode);
               setActiveTab('journey');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
             }}
             voiceTranscript={voiceTranscript}
             setVoiceTranscript={setVoiceTranscript}
@@ -338,6 +324,12 @@ export default function App() {
           <DirectoryBrowser onSelectStandard={handleSelectStandardFromDirectory} currentLang={currentLang} t={t} />
         )}
       </main>
+
+      {/* Official BIS Saathi Footer */}
+      <Footer onNavigateTab={(tab) => {
+        setActiveTab(tab);
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }} />
 
       {/* Source Inspector Modal */}
       <SourceInspectorModal

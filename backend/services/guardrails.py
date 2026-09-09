@@ -189,6 +189,21 @@ def validate_post_llm_grounding(
 
     conn.close()
 
+    # Check: If the generated answer states that no official record was found,
+    # clean up the evidence tag so it doesn't stamp an unrelated standard as 'confirmed'
+    ans_lower = answer_text.lower()
+    if any(phrase in ans_lower for phrase in ["no official bis record was found", "no official record was found", "without a specific indian standard", "not found in the provided context"]):
+        response_data["evidence_tag"] = {
+            "source_type": "directory",
+            "reference": "Unlisted Category",
+            "status": "not determined",
+            "clause_number": "General Advisory",
+            "clause_summary": "No verified mandatory standard found in local BIS directory for this query.",
+            "verbatim_excerpt": "Consult BIS Manak Online for unlisted product categories.",
+            "source_url": "https://www.manakonline.in"
+        }
+        return response_data
+
     if not unverified_codes:
         return response_data
 

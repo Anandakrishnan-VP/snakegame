@@ -55,7 +55,16 @@ def synthesize_with_groq(context_payload: Dict[str, Any], user_query: str, targe
         }
         target_lang_desc = INDIC_LANGUAGE_NAMES.get(target_lang, "English")
 
-        if persona == "consumer":
+        if context_payload.get("intent") == "GENERAL_FAQ":
+            persona_directive = """
+TARGET INQUIRY: GENERAL BIS INSTITUTIONAL / CITIZEN / APP GUIDANCE
+- The user is asking a general informational question about the Bureau of Indian Standards (e.g. what BIS is, official mobile apps like the BIS Care App, web portals like Manak Online, ISI marks, or consumer grievance mechanisms).
+- This is NOT a product compliance query. Do NOT state that "no standard was found for this product".
+- "answer": Directly, clearly, and concisely answer the question asked using the provided institutional overview, FAQs, and your knowledge of BIS.
+- "what_it_means": Explain why this matters (e.g. how the BIS Care App protects consumers from counterfeit goods, or the role of BIS in safeguarding national quality and safety).
+- "next_action": Provide a concrete, helpful action step for the user (e.g., "Download the 'BIS Care App' from the Google Play Store or Apple App Store", or "Visit www.bis.gov.in for more details").
+"""
+        elif persona == "consumer":
             persona_directive = """
 TARGET PERSONA: CONSUMER / BUYER / CITIZEN
 - Primary Mission: Consumer safety, buyer protection, what to inspect on packaging, and licence verification.
@@ -78,8 +87,8 @@ Your goal is to provide accurate, grounded, and source-backed guidance strictly 
 {persona_directive}
 
 CRITICAL GUARDRAIL RULES:
-1. STRICT GROUNDING: You are strictly an explanation interface. All facts, standard codes, clauses, and laboratory names MUST come directly from the official database context provided below. Do not invent, assume, or fabricate any facts outside the context.
-2. REFUSAL MANDATE: If the user asks about anything not contained in the retrieved context (e.g., non-BIS topics, financial advice, coding, general trivia, unverified products), you MUST explicitly state that no official BIS record was found and politely decline.
+1. STRICT GROUNDING: All facts, standard codes, clauses, portal names, and laboratory names MUST come directly from the official database context provided below or official BIS statutory knowledge. Do not invent unverified facts.
+2. REFUSAL MANDATE: If the user asks about completely non-BIS topics (e.g., recipes, movies, programming, general trivia, financial investments), politely decline. For general BIS organizational, portal, and app inquiries, answer them thoroughly and helpfully using the context.
 3. Structure your reply strictly in the 4-Part Answer Pattern:
    - answer: 1-2 plain-language sentences directly answering the user based only on the context and tailored to the persona.
    - what_it_means: Clear explanation tailored to the target persona (manufacturing obligations & fee subsidies for MSME; packaging marks & health safety for Consumer).
@@ -198,6 +207,94 @@ def deterministic_synthesis(context_payload: Dict[str, Any], user_query: str, ta
         }
 
     persona = context_payload.get("persona", "general")
+
+    if context_payload.get("intent") == "GENERAL_FAQ":
+        q_clean = user_query.lower().strip()
+        # 1. App query
+        if any(w in q_clean for w in ["app", "mobile", "play store", "ios", "android", "download"]):
+            if target_lang == "hi":
+                return {
+                    "answer": "हाँ, भारतीय मानक ब्यूरो का आधिकारिक मोबाइल ऐप 'BIS Care App' है, जो एंड्रॉइड (Google Play Store) और iOS (Apple App Store) दोनों पर निःशुल्क उपलब्ध है।",
+                    "what_it_means": "BIS Care App के जरिए उपभोक्ता 7-अंकीय CM/L नंबर से ISI मार्क, 6-अंकीय HUID से सोने की शुद्धता (हॉलमार्क) और 8-अंकीय R-नंबर से इलेक्ट्रॉनिक्स CRS पंजीकरण की जांच कर सकते हैं, तथा घटिया सामान की सीधी शिकायत दर्ज कर सकते हैं।",
+                    "next_action": "Google Play Store या Apple App Store से 'BIS Care App' डाउनलोड करें अथवा https://www.bis.gov.in/consumer-affairs/bis-care-app/ पर जाएं।",
+                    "evidence_tag": evidence,
+                    "persona": persona,
+                    "provider": "deterministic-fallback"
+                }
+            return {
+                "answer": "Yes, the official mobile application of the Bureau of Indian Standards is the **'BIS Care App'**, available for free on both Android (Google Play Store) and iOS (Apple App Store).",
+                "what_it_means": "The BIS Care App empowers citizens to verify product authenticity in real time: verify 7-digit CM/L licence numbers for ISI marks, verify 6-character HUID codes for Gold Hallmarking, verify 8-digit R-numbers for electronics (CRS), locate accredited testing labs, and lodge quality complaints directly with BIS officers.",
+                "next_action": "Download the **BIS Care App** from the Google Play Store or Apple App Store, or visit https://www.bis.gov.in/consumer-affairs/bis-care-app/.",
+                "evidence_tag": evidence,
+                "persona": persona,
+                "provider": "deterministic-fallback"
+            }
+
+        # 2. What is BIS query
+        if any(w in q_clean for w in ["what is bis", "about bis", "who is bis", "what does bis do", "full form of bis", "role of bis", "functions of bis"]):
+            if target_lang == "hi":
+                return {
+                    "answer": "भारतीय मानक ब्यूरो (Bureau of Indian Standards - BIS) भारत का राष्ट्रीय मानक निकाय है, जो उपभोक्ता मामले, खाद्य एवं सार्वजनिक वितरण मंत्रालय के अंतर्गत BIS अधिनियम 2016 के तहत कार्य करता है।",
+                    "what_it_means": "बीआईएस देश भर में वस्तुओं के मानकीकरण, गुणवत्ता प्रमाणन (ISI मार्क, CRS), स्वर्ण हॉलमार्किंग (HUID), और प्रयोगशाला परीक्षण के माध्यम से उपभोक्ताओं के स्वास्थ्य और सुरक्षा की रक्षा करता है।",
+                    "next_action": "आधिकारिक भारतीय मानकों और प्रमाणन सेवाओं की जानकारी के लिए बीआईएस पोर्टल (https://www.bis.gov.in) पर जाएं।",
+                    "evidence_tag": evidence,
+                    "persona": persona,
+                    "provider": "deterministic-fallback"
+                }
+            return {
+                "answer": "The **Bureau of Indian Standards (BIS)** is the National Standard Body of India, established under the *BIS Act 2016* under the Ministry of Consumer Affairs, Food & Public Distribution, Government of India.",
+                "what_it_means": "BIS is responsible for the harmonious development of standardization, product quality certification (ISI Mark, Compulsory Registration Scheme), Gold & Silver Hallmarking (HUID), and laboratory testing, ensuring high safety and reliability standards across India.",
+                "next_action": "Explore official standards, QCO orders, and certification services at the official BIS portal (https://www.bis.gov.in) or apply for licences on Manak Online (https://www.manakonline.in).",
+                "evidence_tag": evidence,
+                "persona": persona,
+                "provider": "deterministic-fallback"
+            }
+
+        # 3. Manak Online / Portals
+        if any(w in q_clean for w in ["manak online", "manakonline", "portal", "website"]):
+            return {
+                "answer": "**Manak Online** (www.manakonline.in) is the official comprehensive e-governance portal of the Bureau of Indian Standards.",
+                "what_it_means": "It provides a paperless digital workflow for manufacturers to submit Form V licence applications, pay statutory fees, book audit inspections, manage lab tests, and track certification renewals.",
+                "next_action": "Visit https://www.manakonline.in to access e-BIS licensing, standards sales, and citizen grievance modules.",
+                "evidence_tag": evidence,
+                "persona": persona,
+                "provider": "deterministic-fallback"
+            }
+
+        # 4. ISI Mark
+        if any(w in q_clean for w in ["isi mark", "what is isi"]):
+            return {
+                "answer": "The **ISI mark** is India's premier industrial and consumer product quality certification mark governed under BIS Scheme-I.",
+                "what_it_means": "It guarantees that a manufactured product conforms to the relevant Indian Standard (IS) for performance, electrical safety, and health. Products carrying the ISI mark must also display the manufacturer's unique 7-digit CM/L licence number.",
+                "next_action": "Verify any ISI-marked product by checking its 7-digit CM/L number on the BIS Care App or on https://www.manakonline.in.",
+                "evidence_tag": evidence,
+                "persona": persona,
+                "provider": "deterministic-fallback"
+            }
+
+        # 5. Hallmarking
+        if any(w in q_clean for w in ["hallmark", "huid", "gold"]):
+            return {
+                "answer": "**Gold Hallmarking** is the official purity certification of gold jewellery in India, mandated by BIS.",
+                "what_it_means": "Hallmarked jewellery features the BIS logo, purity grade (e.g., 22K916), and a laser-engraved 6-character alphanumeric Hallmark Unique Identification (HUID) code unique to each piece.",
+                "next_action": "Verify any 6-character HUID code instantly using the BIS Care App or the BIS Saathi Verification tab.",
+                "evidence_tag": evidence,
+                "persona": persona,
+                "provider": "deterministic-fallback"
+            }
+
+        # Default FAQ match from database
+        faqs = context_payload.get("faqs", [])
+        if faqs:
+            best_faq = faqs[0]
+            return {
+                "answer": best_faq.get("answer", "BIS operates various citizen and industrial certification services across India."),
+                "what_it_means": f"Sourced from BIS Citizen Charter & Consumer FAQ under category '{best_faq.get('category', 'General')}'.",
+                "next_action": f"Visit {best_faq.get('source_url', 'https://www.bis.gov.in')} for more details.",
+                "evidence_tag": evidence,
+                "persona": persona,
+                "provider": "deterministic-fallback"
+            }
 
     if standard:
         is_code = standard.get("is_code", "")

@@ -108,12 +108,16 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
                     if len(div_w) >= 4 and div_w not in STOP_WORDS and abs(len(token) - len(div_w)) <= 2 and SequenceMatcher(None, token, div_w).ratio() >= cutoff:
                         score += 7.0
                         break
-                # Check synonyms
+                # Check synonyms (break outer loop on match to prevent multiplying across synonym phrases)
+                syn_matched = False
                 for syn in synonyms:
                     for syn_w in syn.split():
                         if len(syn_w) >= 4 and syn_w not in STOP_WORDS and abs(len(token) - len(syn_w)) <= 2 and SequenceMatcher(None, token, syn_w).ratio() >= cutoff:
                             score += 7.0
+                            syn_matched = True
                             break
+                    if syn_matched:
+                        break
                 # Check title words
                 for title_w in title.replace("-", " ").replace(":", " ").replace("(", " ").replace(")", " ").replace("/", " ").split():
                     if len(title_w) >= 4 and title_w not in STOP_WORDS and abs(len(token) - len(title_w)) <= 2 and SequenceMatcher(None, token, title_w).ratio() >= cutoff:
