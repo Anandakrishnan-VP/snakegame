@@ -5,29 +5,40 @@ BIS Saathi is an AI-powered compliance intelligence system built for the Bureau 
 
 ---
 
+> **📖 Complete Documentation**: For an exhaustive, encyclopedic guide to every system component, database schema, and feature, see [PRODUCT_INFO.md](file:///d:/DevAk/bis/PRODUCT_INFO.md).
+
+---
+
 ## 🌟 Key Capabilities
 
-1. **Deterministic-First Grounding ("LLM as Interface, Not System of Record")**:
-   - Facts, QCO statuses, schemes, and verification records are retrieved strictly from SQLite.
-   - Groq (`llama-3.3-70b-versatile`) synthesizes natural language strictly grounded in retrieved records.
+1. **Deterministic-First Grounding ("LLM as Linguistic Interface, Not System of Record")**:
+   - Facts, QCO statutes, licensing procedures, and verification records are retrieved strictly from SQLite.
+   - Groq (`openai/gpt-oss-120b`) synthesizes natural language strictly grounded in retrieved evidence.
 2. **The Compliance Chain (§11)**:
-   - One connected journey:
-     $$\text{Product Description} \rightarrow \text{Attribute Match (M2)} \rightarrow \text{Directory Match (M1)} \rightarrow \text{QCO Status} \rightarrow \text{Certification Steps (M3)} \rightarrow \text{Testing Labs (M5)}$$
+   - One connected single-turn journey:
+     $$\text{Product Description} \rightarrow \text{Attribute Match} \rightarrow \text{Standard Code} \rightarrow \text{QCO Status} \rightarrow \text{Scheme-I Steps} \rightarrow \text{Testing Labs}$$
 3. **Interactive Source & Clause Inspector ("Tap-to-Inspect")**:
-   - Every answer contains an **Evidence Tag** (`confirmed`, `needs verification`, `not determined`).
-   - Clicking the citation badge opens the **Source Inspector Modal** displaying verbatim clause text, publication page, and Gazetted QCO orders.
+   - Every answer contains an interactive **Evidence Tag** (`confirmed`, `needs verification`, `not determined`).
+   - Clicking the badge opens the **Source Inspector Modal** displaying verbatim clause text, publication page, and Gazetted QCO orders.
 4. **Licence & Hallmark Verification Hub (Module 4)**:
-   - Prefix-first CM/L extraction (`CML1234567`).
-   - 6-character mixed alphanumeric HUID validation (`AB1234`).
+   - Prefix-first CM/L licence extraction (`CML1234567`).
+   - 6-character mixed alphanumeric HUID gold hallmark validation (`AB1234`).
    - Electronics CRS R-Number verification (`R-41001234`).
 5. **Testing Laboratory Locator (Module 5)**:
-   - City $\rightarrow$ State $\rightarrow$ Central Nationwide Lab fallback.
-6. **Bilingual & Hinglish Support (§12)**:
-   - Translate-before-route pipeline.
-   - Protected tokens (IS codes, numbers, units, and HUID are never garbled by translation).
-7. **Active-Topic Memory (§13)**:
+   - Hierarchical City $\rightarrow$ State $\rightarrow$ Central Nationwide Lab fallback with NABL recognition.
+6. **12 Major Indian Languages & Cross-Language Intelligence (§12)**:
+   - Complete UI localization in 12 languages: English, Hindi, Tamil, Telugu, Marathi, Bengali, Gujarati, Kannada, Malayalam, Punjabi, Odia, Urdu.
+   - Cross-language typing and speaking tolerance: choose any page language and type/speak in any other language.
+   - Protected tokens: IS codes, numbers, units, and HUIDs are never garbled by translation.
+7. **Groq Whisper Large v3 Voice Input**:
+   - Real-time Indic speech-to-text with multi-dialect support.
+8. **Active-Topic Contextual Memory (§13)**:
    - Seamless pronoun resolution (*"Where can I get it tested in Mumbai?"*).
    - Memory updates even on cache hits.
+9. **3-Layer Guardrail & Scope Refusal Shield**:
+   - Adversarial prompt injection defense, hallucination interceptor, and polite out-of-scope refusal.
+10. **Deterministic Offline Fallback Synthesizer**:
+    - Generates full 4-part cards directly from SQLite records if API or network is unavailable.
 
 ---
 

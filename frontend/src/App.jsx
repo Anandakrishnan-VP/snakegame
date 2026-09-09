@@ -11,10 +11,12 @@ import {
   Search,
   ArrowRight,
   ExternalLink,
-  Globe
+  Globe,
+  Compass
 } from 'lucide-react';
 
 import ChatView from './components/ChatView';
+import JourneyView from './components/JourneyView';
 import VerificationPanel from './components/VerificationPanel';
 import LabFinder from './components/LabFinder';
 import DirectoryBrowser from './components/DirectoryBrowser';
@@ -23,13 +25,14 @@ import VoiceModal from './components/VoiceModal';
 import { SUPPORTED_LANGUAGES, getTranslation } from './i18n/translations';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'verify', 'labs', 'directory'
+  const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'journey', 'verify', 'labs', 'directory'
   const [currentLang, setCurrentLang] = useState('en');
   const [selectedEvidence, setSelectedEvidence] = useState(null);
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [initialChatQuery, setInitialChatQuery] = useState('');
+  const [journeyStandardId, setJourneyStandardId] = useState(null);
   const [apiStatus, setApiStatus] = useState('checking');
 
   const t = (key) => getTranslation(currentLang, key);
@@ -132,6 +135,7 @@ export default function App() {
           }}>
             {[
               { id: 'chat', labelKey: 'tab_chat', icon: MessageSquare },
+              { id: 'journey', labelKey: 'tab_journey', icon: Compass },
               { id: 'verify', labelKey: 'tab_verify', icon: ShieldCheck },
               { id: 'labs', labelKey: 'tab_labs', icon: FlaskConical },
               { id: 'directory', labelKey: 'tab_directory', icon: BookOpen }
@@ -223,6 +227,10 @@ export default function App() {
             <ChatView
               onInspectEvidence={handleInspectEvidence}
               onOpenVoice={() => setIsVoiceModalOpen(true)}
+              onStartJourney={(standardCode) => {
+                setJourneyStandardId(standardCode);
+                setActiveTab('journey');
+              }}
               voiceTranscript={voiceTranscript}
               setVoiceTranscript={setVoiceTranscript}
               initialQuery={initialChatQuery}
@@ -231,6 +239,14 @@ export default function App() {
               t={t}
             />
           </div>
+        )}
+
+        {activeTab === 'journey' && (
+          <JourneyView
+            initialStandardId={journeyStandardId}
+            currentLang={currentLang}
+            t={t}
+          />
         )}
 
         {activeTab === 'verify' && <VerificationPanel currentLang={currentLang} t={t} />}

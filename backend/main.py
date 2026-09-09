@@ -33,6 +33,9 @@ from backend.services.compliance_chain import run_compliance_chain
 from backend.services.llm_groq import synthesize_with_groq, deterministic_synthesis
 from backend.services.guardrails import check_pre_retrieval_guardrails, validate_post_llm_grounding
 from backend.services.transcription import transcribe_audio
+from backend.services.journey_service import start_journey, update_step_status, get_journey
+from backend.services.journey_pdf import generate_roadmap_pdf
+from fastapi.responses import Response
 
 app = FastAPI(
     title="BIS Saathi API",
@@ -354,6 +357,58 @@ def api_chat(req: ChatRequest):
 def api_get_session(session_id: str):
     """Returns stored session state including persona, language, active_topic, and turn_history."""
     return get_or_create_session(session_id)
+
+# --- Certification Journey Wizard Endpoints ---
+
+class StartJourneyRequest(BaseModel):
+    session_id: str
+    journey_type: str = "get_certified"
+    standard_id: Optional[str] = None
+    force_new: bool = False
+
+class UpdateStepRequest(BaseModel):
+    status: str
+
+@app.post("/api/journey/start")
+def api_start_journey(req: StartJourneyRequest):
+    """Starts or resumes a persistent compliance journey with deduplication."""
+    return start_journey(
+        session_id=req.session_id,
+        journey_type=req.journey_type,
+        standard_id=req.standard_id,
+        force_new=req.force_new
+    )
+
+@app.patch("/api/journey/{journey_id}/step/{step_id}")
+def api_update_step(journey_id: str, step_id: str, req: UpdateStepRequest):
+    """Toggles step completion status and recalculates readiness score (0-100%)."""
+    updated = update_step_status(journey_id, step_id, req.status)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Journey or step not found.")
+    return updated
+
+@app.get("/api/journey/{journey_id}")
+def api_get_journey(journey_id: str):
+    """Retrieves current state of a certification journey."""
+    journey = get_journey(journey_id)
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found.")
+    return journey
+
+@app.get("/api/journey/{journey_id}/pdf")
+def api_get_journey_pdf(journey_id: str):
+    """Generates and streams a downloadable 1-page roadmap PDF."""
+    journey = get_journey(journey_id)
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found.")
+    
+    pdf_bytes = generate_roadmap_pdf(journey)
+    filename = f"bis_saathi_roadmap_{journey_id[:8]}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 if __name__ == "__main__":
     import uvicorn

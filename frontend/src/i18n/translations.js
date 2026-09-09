@@ -26,6 +26,7 @@ export const translations = {
     // Nav & Header
     subtitle: 'National Standards & Compliance Intelligence Assistant',
     tab_chat: 'Conversational Assistant',
+    tab_journey: 'Certification Journey',
     tab_verify: 'Verify Licence / HUID',
     tab_labs: 'Find Testing Labs',
     tab_directory: 'Standards Directory',
@@ -90,6 +91,7 @@ export const translations = {
   hi: {
     subtitle: 'राष्ट्रीय मानक एवं अनुपालन बुद्धिमत्ता सहायक',
     tab_chat: 'संवादात्मक सहायक',
+    tab_journey: 'प्रमाणन यात्रा',
     tab_verify: 'लाइसेंस / HUID सत्यापन',
     tab_labs: 'परीक्षण प्रयोगशालाएँ',
     tab_directory: 'मानक निर्देशिका',

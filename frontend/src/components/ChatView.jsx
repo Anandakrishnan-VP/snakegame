@@ -22,6 +22,7 @@ import { SUPPORTED_LANGUAGES } from '../i18n/translations';
 export default function ChatView({
   onInspectEvidence,
   onOpenVoice,
+  onStartJourney,
   voiceTranscript,
   setVoiceTranscript,
   initialQuery,
@@ -349,6 +350,32 @@ export default function ChatView({
                     <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, fontWeight: 500 }}>
                       {msg.next_action}
                     </p>
+
+                    {onStartJourney && (msg.active_topic || (msg.evidence_tag && msg.evidence_tag.reference && msg.evidence_tag.reference.includes('IS '))) && (
+                      <div style={{ marginTop: '12px' }}>
+                        <button
+                          onClick={() => onStartJourney(msg.active_topic || msg.evidence_tag.reference)}
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(234, 88, 12, 0.3) 100%)',
+                            border: '1px solid var(--accent-saffron)',
+                            color: '#fff',
+                            borderRadius: '6px',
+                            padding: '6px 14px',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 10px rgba(249, 115, 22, 0.2)'
+                          }}
+                        >
+                          <Award size={14} color="var(--accent-saffron-light)" />
+                          <span>Start My Certification Journey 🚀</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -383,25 +410,51 @@ export default function ChatView({
                       </span>
                     </div>
 
-                    <button
-                      onClick={() => onInspectEvidence(msg.evidence_tag)}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.06)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '6px',
-                        color: 'var(--accent-saffron-light)',
-                        padding: '4px 12px',
-                        fontSize: '0.78rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <BookOpen size={13} /> {t('btn_inspect')} <ArrowRight size={12} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {msg.evidence_tag.source_url && (
+                        <a
+                          href={msg.evidence_tag.source_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            background: 'rgba(56, 189, 248, 0.12)',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            borderRadius: '6px',
+                            color: '#38bdf8',
+                            padding: '4px 10px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            transition: 'all 0.2s ease'
+                          }}
+                          title="Open official government source document or portal"
+                        >
+                          <ExternalLink size={12} /> Direct Document
+                        </a>
+                      )}
+                      <button
+                        onClick={() => onInspectEvidence(msg.evidence_tag)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: '6px',
+                          color: 'var(--accent-saffron-light)',
+                          padding: '4px 12px',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <BookOpen size={13} /> {t('btn_inspect')} <ArrowRight size={12} />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
