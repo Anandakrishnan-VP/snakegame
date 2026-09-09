@@ -445,12 +445,26 @@ def api_chat(req: ChatRequest):
         context_payload["persona"] = current_persona
         if chain_result.get("standard"):
             resolved_standard_code = chain_result["standard"]["is_code"]
+        else:
+            # Tier-2 Fallback: Live Official BIS Web Search
+            # Strictly Second-Option: executed ONLY when local SQLite produces 0 standard hits
+            from backend.services.web_search import search_bis_web
+            web_match = search_bis_web(english_query)
+            if web_match:
+                context_payload = web_match
+                context_payload["persona"] = current_persona
+                resolved_standard_code = web_match.get("is_code")
 
     # Step 8: Synthesis via Groq (with deterministic fallback)
-    response_data = synthesize_with_groq(context_payload, raw_query, target_lang=resolved_lang)
+    if context_payload.get("source_type") == "live_web":
+        from backend.services.llm_groq import synthesize_web_fallback
+        response_data = synthesize_web_fallback(context_payload, raw_query, persona=current_persona, target_lang=resolved_lang)
+    else:
+        response_data = synthesize_with_groq(context_payload, raw_query, target_lang=resolved_lang)
 
     # Guardrail Layer 3: Post-LLM Grounding & Hallucination Interceptor
-    response_data = validate_post_llm_grounding(response_data, language=resolved_lang, context_payload=context_payload)
+    if context_payload.get("source_type") != "live_web":
+        response_data = validate_post_llm_grounding(response_data, language=resolved_lang, context_payload=context_payload)
 
     # Attach metadata
     response_data["session_id"] = session_id

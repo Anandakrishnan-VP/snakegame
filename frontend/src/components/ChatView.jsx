@@ -536,6 +536,19 @@ export default function ChatView({
                       }}>
                         {msg.evidence_tag.status ? (msg.evidence_tag.status === 'confirmed' ? t('tag_confirmed') : t('tag_needs_ver')) : t('tag_confirmed')}
                       </span>
+                      {(msg.source_type === 'live_web' || msg.evidence_tag?.source_type === 'live_web') && (
+                        <span style={{
+                          fontSize: '0.72rem',
+                          padding: '2px 8px',
+                          borderRadius: '9999px',
+                          fontWeight: 600,
+                          background: 'rgba(14, 165, 233, 0.15)',
+                          color: '#0ea5e9',
+                          border: '1px solid rgba(14, 165, 233, 0.3)'
+                        }}>
+                          🌐 Live bis.gov.in
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
