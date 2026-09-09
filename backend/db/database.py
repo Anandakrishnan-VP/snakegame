@@ -40,30 +40,102 @@ def get_db_path() -> Path:
         return tmp_db
     return SOURCE_DB_PATH
 
+class PostgresCursorWrapper:
+    """Wraps a psycopg2 DictCursor to provide transparent SQLite compatibility (? -> %s)."""
+    def __init__(self, raw_cursor):
+        self._cursor = raw_cursor
+
+    def execute(self, sql, params=None):
+        pg_sql = sql.replace("?", "%s")
+        if params is not None:
+            return self._cursor.execute(pg_sql, params)
+        return self._cursor.execute(pg_sql)
+
+    def executemany(self, sql, seq_of_params):
+        pg_sql = sql.replace("?", "%s")
+        return self._cursor.executemany(pg_sql, seq_of_params)
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    def close(self):
+        return self._cursor.close()
+
+    @property
+    def rowcount(self):
+        return self._cursor.rowcount
+
+class PostgresConnectionWrapper:
+    """Wraps a psycopg2 connection to provide dict-like row factory and standard methods."""
+    def __init__(self, raw_conn):
+        self._conn = raw_conn
+
+    def cursor(self):
+        from psycopg2.extras import DictCursor
+        raw_cur = self._conn.cursor(cursor_factory=DictCursor)
+        return PostgresCursorWrapper(raw_cur)
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        return self._conn.close()
+
+def is_postgres_configured() -> bool:
+    """Checks if a PostgreSQL / Supabase connection URL is configured."""
+    db_url = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL")
+    return bool(db_url and db_url.strip().startswith("postgres"))
+
 def get_db_connection():
-    """Returns a sqlite3 connection with dict-like row factory."""
+    """
+    Returns a database connection with dict-like row factory.
+    If DATABASE_URL is configured (Supabase), connects to Postgres.
+    Otherwise, defaults to local SQLite.
+    """
+    if is_postgres_configured():
+        db_url = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL")
+        try:
+            import psycopg2
+            raw_conn = psycopg2.connect(db_url)
+            return PostgresConnectionWrapper(raw_conn)
+        except Exception as e:
+            print(f"Warning: Failed to connect to Supabase/Postgres ({e}). Falling back to local SQLite.")
+
+    # Default to local SQLite
     db_path = get_db_path()
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db(force_reseed: bool = False):
-    """Initializes schema and seeds all tables."""
+    """Initializes schema and seeds all tables for the active database engine."""
+    if is_postgres_configured():
+        try:
+            from scripts.migrate_to_supabase import migrate
+            migrate()
+            return
+        except Exception as e:
+            print(f"Postgres migration check: {e}")
+
+    # Fallback / Local SQLite initialization
     conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Create tables if not exists
-    cursor.executescript(SCHEMA_SQL)
-
-    # Automatic migration: ensure turn_history column exists on session_state
-    try:
-        cursor.execute("PRAGMA table_info(session_state)")
-        cols = [row["name"] for row in cursor.fetchall()]
-        if "turn_history" not in cols:
-            cursor.execute("ALTER TABLE session_state ADD COLUMN turn_history TEXT DEFAULT '[]'")
-            conn.commit()
-    except Exception as e:
-        print(f"Session state schema check: {e}")
+    if isinstance(conn, sqlite3.Connection):
+        cursor = conn.cursor()
+        cursor.executescript(SCHEMA_SQL)
+        try:
+            cursor.execute("PRAGMA table_info(session_state)")
+            cols = [row["name"] for row in cursor.fetchall()]
+            if "turn_history" not in cols:
+                cursor.execute("ALTER TABLE session_state ADD COLUMN turn_history TEXT DEFAULT '[]'")
+                conn.commit()
+        except Exception as e:
+            print(f"Session state schema check: {e}")
 
     if force_reseed:
         tables = ["standards", "standard_chunks", "certification_steps", "verification_registry", "testing_labs", "lab_standard_map", "faq"]
