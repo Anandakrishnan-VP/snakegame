@@ -40,6 +40,7 @@ from backend.services.transcription import transcribe_audio
 from backend.services.journey_service import start_journey, update_step_status, get_journey
 from backend.services.journey_pdf import generate_roadmap_pdf
 from backend.services.conversational_handler import classify_conversational, generate_conversational_response
+from backend.services.vlm_service import analyze_image_with_vlm
 
 app = FastAPI(
     title="BIS Saathi API",
@@ -123,7 +124,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Request/Response Schemas
 class ChatRequest(BaseModel):
-    query: str
+    query: Optional[str] = ""
+    image_base64: Optional[str] = None
     session_id: Optional[str] = None
     persona: Optional[str] = None # 'consumer', 'msme', 'general' (defaults to session persona if None)
     language: Optional[str] = "auto" # 'auto', 'en', 'hi'
@@ -133,12 +135,36 @@ class ChatRequest(BaseModel):
 class VerifyRequest(BaseModel):
     code: str
 
+class VisionAnalyzeRequest(BaseModel):
+    image_base64: str
+    query: Optional[str] = ""
+    persona: Optional[str] = "general"
+    language: Optional[str] = "en"
+
 @app.get("/api")
 @app.get("/api/")
 @app.get("/health")
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "BIS Saathi API"}
+
+@app.post("/api/vision/analyze")
+def api_vision_analyze(req: VisionAnalyzeRequest):
+    """
+    Direct Vision-Language Model endpoint.
+    Visually inspects photographs for products, labels, and BIS marks.
+    """
+    lang = req.language or "en"
+    if req.query and req.language == "auto":
+        lang = resolve_language(req.query, explicit_lang=req.language)
+    elif lang == "auto":
+        lang = "en"
+    return analyze_image_with_vlm(
+        image_base64=req.image_base64,
+        user_query=req.query,
+        persona=req.persona or "general",
+        target_lang=lang
+    )
 
 @app.post("/api/transcribe")
 async def api_transcribe(
@@ -254,7 +280,45 @@ def api_chat(req: ChatRequest):
     8. Groq synthesis, cache & session update
     """
     session_id = req.session_id or str(uuid.uuid4())
-    raw_query = req.query.strip()
+    raw_query = (req.query or "").strip()
+
+    # Multimodal VLM Inspection Branch
+    if req.image_base64 and req.image_base64.strip():
+        session = get_or_create_session(session_id, persona=req.persona or "general", language=req.language or "en")
+        current_persona = req.persona or session.get("persona", "general")
+        resolved_lang = resolve_language(raw_query, explicit_lang=req.language) if raw_query else (req.language or "en")
+        if resolved_lang == "auto":
+            resolved_lang = "en"
+
+        vlm_res = analyze_image_with_vlm(
+            image_base64=req.image_base64,
+            user_query=raw_query,
+            persona=current_persona,
+            target_lang=resolved_lang
+        )
+
+        detected_topic = vlm_res.get("active_topic") or session.get("active_topic")
+        turn_rec = {
+            "query": raw_query or "[Uploaded Product Image for Inspection]",
+            "intent": "VLM_IMAGE_INSPECTION",
+            "active_topic": detected_topic,
+            "language": resolved_lang
+        }
+        update_session(
+            session_id,
+            active_topic=detected_topic,
+            persona=current_persona,
+            language=resolved_lang,
+            turn_record=turn_rec,
+            increment_turn=True
+        )
+        vlm_res["session_id"] = session_id
+        vlm_res["resolved_language"] = resolved_lang
+        vlm_res["active_topic"] = detected_topic
+        vlm_res["from_cache"] = False
+        vlm_res["persona"] = current_persona
+        return vlm_res
+
     if not raw_query:
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 

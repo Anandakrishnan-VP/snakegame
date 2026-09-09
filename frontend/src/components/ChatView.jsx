@@ -16,10 +16,15 @@ import {
   HelpCircle,
   Clock,
   RotateCcw,
-  Award
+  Award,
+  Plus,
+  Camera,
+  Upload,
+  X
 } from 'lucide-react';
 import { SUPPORTED_LANGUAGES } from '../i18n/translations';
 import { API_BASE_URL } from '../api/config';
+import CameraModal from './CameraModal';
 
 export default function ChatView({
   onInspectEvidence,
@@ -94,21 +99,48 @@ export default function ChatView({
   });
 
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const plusMenuRef = useRef(null);
+
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [attachedImage, setAttachedImage] = useState(null);
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (plusMenuRef.current && !plusMenuRef.current.contains(event.target)) {
+        setIsPlusMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setAttachedImage(ev.target.result);
+      setIsPlusMenuOpen(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const msmePrompts = [
     { label: 'Bottle Manufacturing', query: 'I am manufacturing stainless steel vacuum water bottles for kids. What are the rules?' },
     { label: 'Toy Compliance', query: 'What are the mandatory quality standards and test requirements to manufacture toys?' },
     { label: 'Scheme-I Steps', query: 'What are the exact factory audit and Scheme-I steps for ISI certification?' },
-    { label: 'MSME Concessions', query: 'What fee concessions are available for MSMEs and startups in BIS certification?' },
-    { label: 'Hindi MSME Mode', query: 'खिलौना निर्माण के लिए बीआईएस प्रमाणन प्रक्रिया क्या है?' }
+    { label: 'MSME Concessions', query: 'What fee concessions are available for MSMEs and startups in BIS certification?' }
   ];
 
   const consumerPrompts = [
     { label: 'Bottle Safety Check', query: 'How can I verify if a stainless steel water bottle is safe and genuine before buying?' },
     { label: 'Toy Safety for Kids', query: 'Are plastic toys safe for toddlers and how do I check the ISI mark?' },
     { label: 'Check Gold Hallmark', query: 'How do I verify 6-digit HUID gold hallmark on jewellery using BIS Care app?' },
-    { label: 'Report Defective Item', query: 'How can I file a complaint against a defective or fake ISI-marked product?' },
-    { label: 'Hindi Consumer Mode', query: 'सोने के आभूषणों पर हॉलमार्क HUID की जांच कैसे करें?' }
+    { label: 'Report Defective Item', query: 'How can I file a complaint against a defective or fake ISI-marked product?' }
   ];
 
   const quickPrompts = persona === 'consumer' ? consumerPrompts : msmePrompts;
@@ -173,18 +205,27 @@ export default function ChatView({
     }
   }, [initialQuery]);
 
-  const sendMessage = async (queryText) => {
-    const textToSend = queryText || inputQuery;
-    if (!textToSend.trim() || loading) return;
+  const sendMessage = async (queryText = null) => {
+    const rawText = queryText || inputQuery;
+    const hasImage = Boolean(attachedImage);
+
+    if (!rawText.trim() && !hasImage) return;
+    if (loading) return;
+
+    const imageToSend = attachedImage;
+    const textToSend = rawText.trim() || (hasImage ? "Please inspect this product image, detect any visible ISI mark, CM/L licence number, Hallmark or HUID, and provide the compliance and quality details under Indian Standards." : "");
 
     const userMsg = {
       id: 'user-' + Date.now(),
       sender: 'user',
-      text: textToSend
+      text: textToSend,
+      image: imageToSend,
+      persona: persona
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInputQuery('');
+    setAttachedImage(null);
     setLoading(true);
 
     try {
@@ -193,6 +234,7 @@ export default function ChatView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: textToSend,
+          image_base64: imageToSend || null,
           session_id: sessionId,
           persona: persona,
           language: currentLang
@@ -215,7 +257,10 @@ export default function ChatView({
         from_cache: data.from_cache,
         provider: data.provider,
         active_topic: data.active_topic,
-        persona: data.persona || persona
+        persona: data.persona || persona,
+        detected_product: data.detected_product,
+        detected_marks: data.detected_marks,
+        intent: data.intent
       };
 
       if (data.active_topic) {
@@ -339,6 +384,24 @@ export default function ChatView({
                 lineHeight: 1.5,
                 boxShadow: '0 4px 12px rgba(17, 19, 21, 0.15)'
               }}>
+                {msg.image && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <img
+                      src={msg.image}
+                      alt="Uploaded for inspection"
+                      onClick={() => setZoomedImage(msg.image)}
+                      style={{
+                        maxWidth: '220px',
+                        maxHeight: '160px',
+                        borderRadius: '8px',
+                        objectFit: 'cover',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        cursor: 'zoom-in',
+                        display: 'block'
+                      }}
+                    />
+                  </div>
+                )}
                 {msg.text}
               </div>
             ) : (
@@ -394,6 +457,22 @@ export default function ChatView({
                         border: '1px solid var(--border-subtle)'
                       }}>
                         <Building2 size={12} /> MSME Compliance & Licensing Advisory
+                      </span>
+                    )}
+                    {(msg.intent === 'VLM_IMAGE_INSPECTION' || msg.detected_product || msg.provider?.includes('vlm')) && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '3px 10px',
+                        borderRadius: '9999px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        color: 'var(--accent-aqua)',
+                        background: 'rgba(13, 148, 136, 0.14)',
+                        border: '1px solid rgba(13, 148, 136, 0.3)'
+                      }}>
+                        <Sparkles size={11} /> {t('vlm_badge')}
                       </span>
                     )}
                   </div>
@@ -759,7 +838,207 @@ export default function ChatView({
 
         {/* Row 3: Input Form */}
         <div style={{ padding: '6px 16px 12px 16px' }}>
+          {/* Attached Image Preview Strip */}
+          {attachedImage && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '8px 12px',
+              marginBottom: '8px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '8px',
+              animation: 'fadeIn 0.2s ease'
+            }}>
+              <div style={{ position: 'relative' }}>
+                <img
+                  src={attachedImage}
+                  alt="Selected preview"
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '6px',
+                    objectFit: 'cover',
+                    border: '1px solid var(--border-subtle)'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setAttachedImage(null)}
+                  title={t('vlm_remove') || 'Remove photo'}
+                  style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    background: 'var(--cod-gray)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {t('vlm_preview_title') || 'Attached for Quality & ISI/Hallmark Inspection'}
+                </span>
+                <span style={{ fontSize: '0.74rem', color: 'var(--accent-aqua)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Sparkles size={12} /> Ready for Vision AI verification
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Hidden File Input for Device Upload */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+
           <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {/* + Button for Camera and Files */}
+            <div style={{ position: 'relative' }} ref={plusMenuRef}>
+              <button
+                type="button"
+                id="btn-vlm-plus"
+                onClick={() => setIsPlusMenuOpen((prev) => !prev)}
+                title={t('btn_attach') || 'Attach Photo / Document'}
+                style={{
+                  padding: '11px',
+                  borderRadius: '10px',
+                  background: isPlusMenuOpen || attachedImage ? 'var(--accent-aqua)' : 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  color: isPlusMenuOpen || attachedImage ? '#ffffff' : 'var(--accent-aqua)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Plus size={19} />
+              </button>
+
+              {/* Popover Menu with Camera and Add Files */}
+              {isPlusMenuOpen && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: 'calc(100% + 8px)',
+                  left: 0,
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.25)',
+                  padding: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  minWidth: '220px',
+                  zIndex: 60
+                }}>
+                  <button
+                    type="button"
+                    id="btn-vlm-camera"
+                    onClick={() => {
+                      setIsPlusMenuOpen(false);
+                      setIsCameraOpen(true);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 14px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-surface)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: 'rgba(13, 148, 136, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--accent-aqua)'
+                    }}>
+                      <Camera size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{t('btn_camera') || 'Camera'}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Take live photo</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="btn-vlm-upload"
+                    onClick={() => {
+                      setIsPlusMenuOpen(false);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.click();
+                      }
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 14px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-surface)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: 'rgba(13, 148, 136, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--accent-aqua)'
+                    }}>
+                      <Upload size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{t('btn_upload') || 'Add Files'}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Upload from device</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={onOpenVoice}
@@ -793,9 +1072,11 @@ export default function ChatView({
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               placeholder={
-                persona === 'consumer'
-                  ? t('chat_placeholder_consumer')
-                  : t('chat_placeholder_msme')
+                attachedImage
+                  ? "Optional: ask specific question or press send to analyze..."
+                  : persona === 'consumer'
+                    ? t('chat_placeholder_consumer')
+                    : t('chat_placeholder_msme')
               }
               style={{
                 flex: 1,
@@ -818,9 +1099,14 @@ export default function ChatView({
 
             <button
               type="submit"
-              disabled={!inputQuery.trim() || loading}
+              disabled={(!inputQuery.trim() && !attachedImage) || loading}
               className="btn-primary"
-              style={{ padding: '12px 20px', borderRadius: '10px', opacity: !inputQuery.trim() || loading ? 0.6 : 1 }}
+              style={{
+                padding: '12px 20px',
+                borderRadius: '10px',
+                opacity: (!inputQuery.trim() && !attachedImage) || loading ? 0.6 : 1,
+                cursor: (!inputQuery.trim() && !attachedImage) || loading ? 'not-allowed' : 'pointer'
+              }}
             >
               <Send size={18} />
             </button>
@@ -831,6 +1117,77 @@ export default function ChatView({
           </p>
         </div>
       </div>
+
+      {/* Live Camera Modal */}
+      <CameraModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={(photoDataUrl) => setAttachedImage(photoDataUrl)}
+        onSwitchToFileUpload={() => {
+          if (fileInputRef.current) {
+            fileInputRef.current.click();
+          }
+        }}
+      />
+
+      {/* Full Size Image Lightbox */}
+      {zoomedImage && (
+        <div
+          onClick={() => setZoomedImage(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '24px',
+            backdropFilter: 'blur(4px)',
+            cursor: 'zoom-out'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}
+          >
+            <img
+              src={zoomedImage}
+              alt="Enlarged inspection"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '85vh',
+                borderRadius: '12px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+                objectFit: 'contain',
+                border: '1px solid rgba(255,255,255,0.2)'
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setZoomedImage(null)}
+              style={{
+                position: 'absolute',
+                top: '-12px',
+                right: '-12px',
+                background: 'var(--cod-gray)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.4)'
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

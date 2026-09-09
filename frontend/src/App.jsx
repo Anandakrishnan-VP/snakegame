@@ -24,6 +24,7 @@ import LabFinder from './components/LabFinder';
 import DirectoryBrowser from './components/DirectoryBrowser';
 import SourceInspectorModal from './components/SourceInspectorModal';
 import VoiceModal from './components/VoiceModal';
+import Footer from './components/Footer';
 import { SUPPORTED_LANGUAGES, getTranslation } from './i18n/translations';
 import { API_BASE_URL } from './api/config';
 
@@ -88,12 +89,14 @@ export default function App() {
 
   return (
     <div style={{
-      height: activeTab === 'chat' ? '100vh' : 'auto',
-      minHeight: '100vh',
-      maxHeight: activeTab === 'chat' ? '100vh' : 'none',
+      height: '100vh',
+      maxHeight: '100vh',
+      width: '100vw',
+      overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      overflow: activeTab === 'chat' ? 'hidden' : 'visible'
+      background: 'var(--bg-primary)',
+      color: 'var(--text-primary)'
     }}>
       {/* Top Navbar */}
       <header style={{
@@ -136,17 +139,6 @@ export default function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="font-heading" style={{ fontSize: '1.35rem', color: 'var(--text-primary)', fontWeight: 800 }}>
                   BIS Saathi
-                </span>
-                <span style={{
-                  fontSize: '0.7rem',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  background: 'rgba(13, 148, 136, 0.12)',
-                  color: 'var(--accent-aqua)',
-                  fontWeight: 700,
-                  border: '1px solid rgba(13, 148, 136, 0.28)'
-                }}>
-                  SIH26107
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -268,19 +260,7 @@ export default function App() {
               </select>
             </div>
 
-            {/* Backend Status Indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: apiStatus === 'online' ? '#10b981' : '#ef4444',
-                boxShadow: apiStatus === 'online' ? '0 0 10px #10b981' : '0 0 10px #ef4444'
-              }} />
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {apiStatus === 'online' ? t('status_online') : t('status_connecting')}
-              </span>
-            </div>
+
           </div>
         </div>
       </header>
@@ -288,14 +268,14 @@ export default function App() {
       {/* Main Content Area */}
       <main style={{
         flex: 1,
-        padding: activeTab === 'chat' ? '10px 20px 14px 20px' : '24px 20px',
+        minHeight: 0,
+        overflowY: activeTab === 'chat' ? 'hidden' : 'auto',
+        padding: activeTab === 'chat' ? '6px 16px 6px 16px' : '20px',
         maxWidth: activeTab === 'chat' ? '1100px' : '1280px',
         margin: '0 auto',
         width: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0,
-        overflow: activeTab === 'chat' ? 'hidden' : 'visible'
+        flexDirection: 'column'
       }}>
         {/* Chat tab is kept mounted so navigating away and returning preserves chat conversation */}
         <div style={{
@@ -338,6 +318,12 @@ export default function App() {
           <DirectoryBrowser onSelectStandard={handleSelectStandardFromDirectory} currentLang={currentLang} t={t} />
         )}
       </main>
+
+      {/* Official BIS Saathi Footer */}
+      <Footer onNavigateTab={(tab) => {
+        setActiveTab(tab);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }} />
 
       {/* Source Inspector Modal */}
       <SourceInspectorModal
