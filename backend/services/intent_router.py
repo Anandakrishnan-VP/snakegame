@@ -73,12 +73,29 @@ UTTERANCES = {
         "nabl test house for toys"
     ],
     "GENERAL_FAQ": [
+        "what is bis",
+        "what does bis do",
+        "tell me about bis",
+        "what does bis stand for",
+        "who is bis",
+        "what is the full form of bis",
+        "functions of bureau of indian standards",
+        "is there any app",
+        "is there a mobile app for bis",
+        "does bis have an app",
+        "download bis care app",
+        "what is bis care app",
+        "what is manak online",
+        "what is isi mark",
+        "what is gold hallmarking",
         "what are bis standards clubs in schools",
         "how can a consumer file complaint against fake isi",
         "tell me about nits training in noida",
         "what concessions are available for msme and startups",
         "consumer rights for sub-standard products",
-        "who regulates hallmarking in india"
+        "who regulates hallmarking in india",
+        "where is bis headquarters located",
+        "official website of bis"
     ],
     "OUT_OF_SCOPE": [
         "who is the prime minister of india",
@@ -90,6 +107,26 @@ UTTERANCES = {
         "write an essay on global warming"
     ]
 }
+
+# General BIS institutional, mobile app, and portal patterns
+GENERAL_FAQ_PATTERNS = [
+    # 1. Institutional BIS inquiries
+    r'\b(?:what is bis|who is bis|tell me about bis|about bis|what does bis do|what does bis stand for|full form of bis|role of bis|functions of bis|history of bis|is bis government|who heads bis|director general of bis|where is bis|bis headquarter|contact bis|bis helpline|toll free|customer care)\b',
+    # 2. App & Portal inquiries
+    r'\b(?:is there any app|any app|mobile app|bis app|bis care app|download app|care app|is there an app|have an app|application for mobile|play store|app store|what is manak online|what is bis portal|official website of bis|manakonline portal)\b',
+    # 3. Core BIS Concepts & Citizen Affairs (non-product)
+    r'\b(?:what is isi mark|what is isi|what is hallmarking|what is hallmark|what is huid|what is crs|what is qco|what is quality control order|how many standards|standards? club|nits|grievance|complaint|bis care|concession|msme fee|udyam discount)\b'
+]
+
+def is_general_inquiry(query: str) -> bool:
+    """Checks whether query is an institutional, app, portal, or general FAQ inquiry."""
+    if not query:
+        return False
+    text = query.lower().strip()
+    for pat in GENERAL_FAQ_PATTERNS:
+        if re.search(pat, text):
+            return True
+    return False
 
 # Compile corpus and TF-IDF matrix for fallback
 _corpus = []
@@ -114,28 +151,28 @@ def route_intent(query: str) -> Dict[str, Any]:
 
     text = query.lower().strip()
 
-    # 1. Verification Fast-Path
-    if re.search(r'\b(?:cml|cm/l|huid|crs|r-\d{8})\b', text) or re.search(r'\bverify\b', text):
+    # 1. Verification Fast-Path (explicit CM/L, HUID, CRS R-number or verify keyword)
+    if re.search(r'\b(?:cml|cm/l|huid|crs|r-\d{8})\b', text) or (re.search(r'\bverify\b', text) and re.search(r'\b(?:code|number|licence|license|mark|hallmark)\b', text)):
         return {"intent": "VERIFICATION", "confidence": 0.95, "method": "regex_fastpath"}
 
-    # 2. Lab Search Fast-Path
+    # 2. General FAQ Fast-Path (Institution, Apps, Portals, Core Concepts)
+    if is_general_inquiry(text):
+        return {"intent": "GENERAL_FAQ", "confidence": 0.95, "method": "regex_fastpath"}
+
+    # 3. Lab Search Fast-Path
     if re.search(r'\b(?:lab|testing lab|laborator(?:y|ies)|where can i test|nabl lab)\b', text):
         return {"intent": "LAB_SEARCH", "confidence": 0.92, "method": "regex_fastpath"}
 
-    # 3. Certification Steps Fast-Path
-    if re.search(r'\b(?:how to apply|how to get|procedure|certification step|process for|scheme-i|crs|fmcs|manak online|form v|timeline|licensing steps)\b', text):
+    # 4. Certification Steps Fast-Path
+    if re.search(r'\b(?:how to apply|how to get (?:certified|licence|license)|procedure|certification step|process for|scheme-i|crs|fmcs|form v|timeline|licensing steps)\b', text):
         return {"intent": "CERTIFICATION_PROCESS", "confidence": 0.90, "method": "regex_fastpath"}
 
-    # 4. Standard Search Fast-Path (Contains explicit "IS " followed by digits)
+    # 5. Standard Search Fast-Path (Contains explicit "IS " followed by digits)
     if re.search(r'\bis\s*\d{3,5}\b', text):
         return {"intent": "STANDARD_SEARCH", "confidence": 0.92, "method": "regex_fastpath"}
 
     if re.search(r'\b(?:standard for|standards for|which standard|what is the standard|applicable standard|safety standard)\b', text):
         return {"intent": "PRODUCT_TO_STANDARD", "confidence": 0.92, "method": "regex_fastpath"}
-
-    # 5. General FAQ Fast-Path
-    if re.search(r'\b(?:standards? club|nits|grievance|complaint|bis care|concession|msme fee|udyam discount)\b', text):
-        return {"intent": "GENERAL_FAQ", "confidence": 0.88, "method": "regex_fastpath"}
 
     # 6. Out of Scope Fast-Path
     if re.search(r'\b(?:recipe|poem|joke|weather|movie|cricket score|netflix|python code|algorithm)\b', text):

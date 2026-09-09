@@ -11,7 +11,12 @@ from backend.db.database import get_db_connection
 STOP_WORDS = {
     "is", "standard", "standards", "indian", "specification", "specifications",
     "code", "codes", "in", "of", "to", "for", "and", "the", "a", "an", "on", "at", "by", "or",
-    "part", "sec", "section"
+    "part", "sec", "section", "i", "we", "my", "our", "you", "your", "he", "she", "they",
+    "make", "making", "makes", "manufacture", "manufacturing", "manufacturer", "manufacturers",
+    "produce", "producing", "produces", "producer", "producers", "sell", "selling", "seller",
+    "buy", "buying", "buyer", "want", "wants", "need", "needs", "get", "do", "does", "did",
+    "how", "what", "where", "which", "who", "when", "can", "could", "should", "would",
+    "help", "please", "tell", "about", "product", "products", "item", "items", "good", "goods"
 }
 
 def search_directory(query: str, division_filter: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -101,18 +106,22 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
         # Fuzzy typo matching: catches 'electrnoics', 'hemlt', 'botle', 'batry', 'cemnt', etc.
         for token in tokens:
             if len(token) >= 3 and token not in STOP_WORDS:
-                cutoff = 0.68 if len(token) <= 5 else 0.75
+                cutoff = 0.85 if len(token) <= 4 else (0.78 if len(token) <= 6 else 0.72)
                 # Check division words
                 for div_w in division.replace("&", " ").replace("(", " ").replace(")", " ").replace("/", " ").split():
                     if len(div_w) >= 3 and SequenceMatcher(None, token, div_w).ratio() >= cutoff:
                         score += 7.0
                         break
-                # Check synonyms
+                # Check synonyms (break outer loop on match to prevent multiplying across synonym phrases)
+                syn_matched = False
                 for syn in synonyms:
                     for syn_w in syn.split():
                         if len(syn_w) >= 3 and SequenceMatcher(None, token, syn_w).ratio() >= cutoff:
                             score += 7.0
+                            syn_matched = True
                             break
+                    if syn_matched:
+                        break
                 # Check title words
                 for title_w in title.replace("-", " ").replace(":", " ").replace("(", " ").replace(")", " ").replace("/", " ").split():
                     if len(title_w) >= 3 and SequenceMatcher(None, token, title_w).ratio() >= cutoff:

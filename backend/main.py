@@ -28,7 +28,7 @@ from backend.services.multilingual import (
     resolve_language,
     translate_to_english_if_needed
 )
-from backend.services.intent_router import route_intent
+from backend.services.intent_router import route_intent, is_general_inquiry
 from backend.services.module1_directory import search_directory, get_standard_by_code, get_flagship_chunks
 from backend.services.module3_certification import get_certification_steps, get_scheme_overview
 from backend.services.module4_verification import verify_code
@@ -211,6 +211,10 @@ def augment_query_if_followup(query: str, active_topic: Optional[str]) -> str:
 
     # 0. Conversational pleasantries / acknowledgments should never be augmented
     if classify_conversational(query):
+        return query
+
+    # General institutional, app, or portal inquiries should never be augmented with product topics
+    if is_general_inquiry(query):
         return query
 
     lower = query.lower().strip()
@@ -416,20 +420,65 @@ def api_chat(req: ChatRequest):
     elif intent == "GENERAL_FAQ":
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT question, answer, source_url FROM faq")
+        cursor.execute("SELECT category, question, answer, source_url FROM faq")
         faqs = [dict(r) for r in cursor.fetchall()]
         conn.close()
+
+        q_lower = augmented_query.lower()
+        source_url = "https://www.bis.gov.in"
+        source_ref = "Bureau of Indian Standards (BIS Act 2016)"
+
+        if any(w in q_lower for w in ["app", "mobile", "bis care", "android", "ios", "play store", "download"]):
+            source_url = "https://www.bis.gov.in/consumer-affairs/bis-care-app/"
+            source_ref = "BIS Care App (Official Mobile App)"
+        elif any(w in q_lower for w in ["manak online", "manakonline", "portal", "website"]):
+            source_url = "https://www.manakonline.in"
+            source_ref = "BIS Manak Online Portal"
+        elif any(w in q_lower for w in ["hallmark", "huid", "gold"]):
+            source_url = "https://www.bis.gov.in/hallmarking/overview/"
+            source_ref = "BIS Gold Hallmarking Scheme"
+        elif any(w in q_lower for w in ["isi mark", "isi"]):
+            source_url = "https://www.bis.gov.in/product-certification/overview/"
+            source_ref = "BIS Scheme-I (ISI Mark)"
+        elif any(w in q_lower for w in ["complaint", "grievance"]):
+            source_url = "https://www.bis.gov.in/consumer-affairs/grievance-redressal/"
+            source_ref = "BIS Consumer Grievance Portal"
+
         context_payload = {
             "intent": "GENERAL_FAQ",
             "faqs": faqs,
+            "institutional_overview": {
+                "organization": "Bureau of Indian Standards (BIS)",
+                "statutory_mandate": "National Standard Body of India established under the BIS Act 2016 (originally founded as the Indian Standards Institution - ISI in 1947), operating under the Ministry of Consumer Affairs, Food & Public Distribution, Government of India.",
+                "headquarters": "Manak Bhavan, 9 Bahadur Shah Zafar Marg, New Delhi 110002.",
+                "official_app": {
+                    "app_name": "BIS Care App",
+                    "platforms": "Available for free on Android (Google Play Store) and iOS (Apple App Store)",
+                    "purpose": "Official mobile app for Indian citizens and consumers to verify product quality marks and report counterfeits.",
+                    "features": [
+                        "Verify ISI Mark authenticity by entering the 7-digit CM/L licence number.",
+                        "Verify Gold Hallmark purity, fineness, and registered jeweller by entering the 6-character alphanumeric HUID code.",
+                        "Verify Compulsory Registration Scheme (CRS) electronics by entering the 8-digit R-number.",
+                        "Locate BIS-recognized and accredited testing laboratories across India.",
+                        "Lodge consumer quality complaints and track grievance redressal status directly with BIS officers."
+                    ],
+                    "download_url": "https://www.bis.gov.in/consumer-affairs/bis-care-app/"
+                },
+                "official_portals": [
+                    {"name": "BIS Official Portal", "url": "https://www.bis.gov.in", "purpose": "Standards catalog, QCO notifications, institutional information"},
+                    {"name": "Manak Online", "url": "https://www.manakonline.in", "purpose": "e-BIS online licensing (Form V), audit tracking, laboratory testing, standards sales"},
+                    {"name": "CRS Portal", "url": "https://www.crsbis.in", "purpose": "Compulsory Registration Scheme for electronics, IT goods, and solar modules"}
+                ]
+            },
             "persona": current_persona,
             "evidence_tag": {
                 "source_type": "faq",
-                "reference": "BIS Citizen Charter & Consumer FAQ",
+                "reference": source_ref,
                 "status": "confirmed",
-                "clause_summary": "Guidelines sourced directly from BIS Consumer Affairs and Training manuals.",
-                "verbatim_excerpt": "Guidelines sourced directly from BIS Consumer Affairs and Training manuals.",
-                "source_url": "https://www.bis.gov.in/consumer-affairs/"
+                "clause_number": "Citizen Advisory",
+                "clause_summary": f"Official institutional guidelines and services of the {source_ref}.",
+                "verbatim_excerpt": f"Official institutional guidelines and services of the {source_ref}.",
+                "source_url": source_url
             }
         }
 

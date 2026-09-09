@@ -26,7 +26,13 @@ CATEGORY_DICT = {
     "cable": ["wire", "cable", "cord", "wiring", "conductor"],
     "footwear": ["shoe", "shoes", "footwear", "sneakers", "boots", "sandals"],
     "appliance": ["iron", "press", "heater", "geyser", "toaster", "blender"],
-    "electronics": ["electronics", "electronic", "it equipment", "computer", "laptop", "tablet", "mobile", "gadget", "router", "server", "crs", "information technology", "electronic goods"]
+    "electronics": ["electronics", "electronic", "it equipment", "computer", "laptop", "tablet", "mobile", "gadget", "router", "server", "crs", "information technology", "electronic goods", "tv", "television"],
+    "cookware": ["cooker", "pressure cooker", "stove", "gas stove", "burner", "foil", "aluminium foil", "square tin", "tin", "utensil"],
+    "fire_safety": ["fire extinguisher", "extinguisher", "fire cylinder", "fire safety", "abc powder"],
+    "automotive": ["tyre", "tyres", "tire", "tires", "windshield", "safety glass", "car glass"],
+    "pipe_wood": ["pvc pipe", "pipe", "plywood", "ply", "flush door", "door shutter"],
+    "protective_gear": ["safety shoe", "safety boots", "steel toe", "n95", "mask", "ffp2", "ppe", "half mask"],
+    "solar": ["solar panel", "solar panels", "solar", "photovoltaic", "pv module", "solar cell", "solar power", "solar inverter", "rooftop solar", "solar electricity", "solar module"]
 }
 
 MATERIAL_DICT = {
