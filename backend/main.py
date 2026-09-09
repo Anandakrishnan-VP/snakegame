@@ -7,8 +7,9 @@ import os
 import uuid
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel, Field
 
 load_dotenv()
@@ -35,13 +36,44 @@ from backend.services.guardrails import check_pre_retrieval_guardrails, validate
 from backend.services.transcription import transcribe_audio
 from backend.services.journey_service import start_journey, update_step_status, get_journey
 from backend.services.journey_pdf import generate_roadmap_pdf
-from fastapi.responses import Response
 
 app = FastAPI(
     title="BIS Saathi API",
     description="Intelligent Assistant for Indian Standards and BIS Services",
     version="1.0.0"
 )
+
+# Vercel Serverless Path Normalization Middleware
+@app.middleware("http")
+async def vercel_path_normalization(request: Request, call_next):
+    """
+    Normalizes incoming request paths across Vercel serverless functions,
+    handling cases where rewrites send the original path in headers
+    (x-matched-path, x-forwarded-uri) or strip /api prefix.
+    """
+    orig_path = (
+        request.headers.get("x-matched-path")
+        or request.headers.get("x-forwarded-uri")
+        or request.url.path
+    )
+    if "?" in orig_path:
+        orig_path = orig_path.split("?")[0]
+
+    current_path = request.scope.get("path", "")
+
+    # If Vercel rewrote the destination to /api/index.py or /api/index
+    if current_path in ["/api/index.py", "/api/index"]:
+        if orig_path and orig_path not in ["/api/index.py", "/api/index"]:
+            request.scope["path"] = orig_path
+        else:
+            return JSONResponse({"status": "healthy", "service": "BIS Saathi API"})
+
+    # Ensure API subroutes start with /api (e.g. /health -> /api/health)
+    path_now = request.scope.get("path", "")
+    if not path_now.startswith("/api") and path_now not in ["/", "/docs", "/openapi.json"]:
+        request.scope["path"] = f"/api{path_now}"
+
+    return await call_next(request)
 
 # Explicit CORS Origins for Local Dev & Production / Vercel
 configured_origins = [
@@ -81,6 +113,10 @@ class ChatRequest(BaseModel):
 class VerifyRequest(BaseModel):
     code: str
 
+@app.get("/")
+@app.get("/api")
+@app.get("/api/")
+@app.get("/health")
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "BIS Saathi API"}
