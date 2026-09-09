@@ -198,7 +198,7 @@ def migrate():
         ))
     conn.commit()
 
-    print("\n✅ Migration complete! Supabase database is fully seeded and ready for production.")
+    print("\n[SUCCESS] Migration complete! Supabase database is fully seeded and ready for production.")
     cursor.close()
     conn.close()
 

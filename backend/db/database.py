@@ -6,6 +6,9 @@ Connects to SQLite and populates seed data on first run.
 import sqlite3
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 from backend.db.schema import SCHEMA_SQL
 from backend.db.seed_data import (
     STANDARDS_SEED,

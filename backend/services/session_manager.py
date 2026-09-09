@@ -139,10 +139,23 @@ def write_cache(query: str, language: str, response_data: Dict[str, Any], active
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT OR REPLACE INTO query_cache (cache_key, query_text, resolved_language, response_json, active_topic)
-        VALUES (?, ?, ?, ?, ?)
-    """, (cache_key, query, language, json.dumps(response_data), active_topic))
+    from backend.db.database import is_postgres_configured
+    if is_postgres_configured():
+        cursor.execute("""
+            INSERT INTO query_cache (cache_key, query_text, resolved_language, response_json, active_topic)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (cache_key) DO UPDATE SET
+                query_text = EXCLUDED.query_text,
+                resolved_language = EXCLUDED.resolved_language,
+                response_json = EXCLUDED.response_json,
+                active_topic = EXCLUDED.active_topic,
+                created_at = CURRENT_TIMESTAMP
+        """, (cache_key, query, language, json.dumps(response_data), active_topic))
+    else:
+        cursor.execute("""
+            INSERT OR REPLACE INTO query_cache (cache_key, query_text, resolved_language, response_json, active_topic)
+            VALUES (?, ?, ?, ?, ?)
+        """, (cache_key, query, language, json.dumps(response_data), active_topic))
 
     conn.commit()
     conn.close()
