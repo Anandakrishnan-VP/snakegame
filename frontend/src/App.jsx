@@ -7,12 +7,14 @@ import {
   Sparkles, 
   CheckCircle2, 
   Award, 
-  FileText,
-  Search,
-  ArrowRight,
-  ExternalLink,
-  Globe,
-  Compass
+  FileText, 
+  Search, 
+  ArrowRight, 
+  ExternalLink, 
+  Globe, 
+  Compass,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 import ChatView from './components/ChatView';
@@ -35,6 +37,26 @@ export default function App() {
   const [initialChatQuery, setInitialChatQuery] = useState('');
   const [journeyStandardId, setJourneyStandardId] = useState(null);
   const [apiStatus, setApiStatus] = useState('checking');
+
+  // Theme State (defaulting to 'light' with localStorage persistence)
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('bis_saathi_theme') || 'light';
+    } catch (e) {
+      return 'light';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem('bis_saathi_theme', theme);
+    } catch (e) {}
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   const t = (key) => getTranslation(currentLang, key);
 
@@ -75,13 +97,15 @@ export default function App() {
     }}>
       {/* Top Navbar */}
       <header style={{
-        backgroundColor: 'rgba(7, 9, 14, 0.85)',
+        backgroundColor: 'var(--bg-glass)',
         backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--border-subtle)',
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        flexShrink: 0
+        flexShrink: 0,
+        transition: 'background-color 0.3s ease, border-color 0.3s ease'
       }}>
         <div style={{
           maxWidth: '1280px',
@@ -99,28 +123,28 @@ export default function App() {
               width: '42px',
               height: '42px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #f97316 0%, #1d4ed8 100%)',
+              background: 'linear-gradient(135deg, #111315 0%, #0d9488 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
-              boxShadow: '0 4px 15px rgba(249, 115, 22, 0.3)'
+              color: '#ffffff',
+              boxShadow: '0 4px 14px rgba(13, 148, 136, 0.25)'
             }}>
               <Award size={24} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="font-heading" style={{ fontSize: '1.35rem', color: '#fff', fontWeight: 800 }}>
+                <span className="font-heading" style={{ fontSize: '1.35rem', color: 'var(--text-primary)', fontWeight: 800 }}>
                   BIS Saathi
                 </span>
                 <span style={{
                   fontSize: '0.7rem',
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  background: 'rgba(249, 115, 22, 0.15)',
-                  color: 'var(--accent-saffron)',
+                  background: 'rgba(13, 148, 136, 0.12)',
+                  color: 'var(--accent-aqua)',
                   fontWeight: 700,
-                  border: '1px solid rgba(249, 115, 22, 0.3)'
+                  border: '1px solid rgba(13, 148, 136, 0.28)'
                 }}>
                   SIH26107
                 </span>
@@ -136,7 +160,7 @@ export default function App() {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: 'rgba(255, 255, 255, 0.04)',
+            background: 'var(--bg-surface)',
             padding: '4px',
             borderRadius: '12px',
             border: '1px solid var(--border-subtle)',
@@ -162,8 +186,8 @@ export default function App() {
                     padding: '8px 14px',
                     borderRadius: '8px',
                     border: 'none',
-                    background: isActive ? 'var(--accent-saffron)' : 'transparent',
-                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    background: isActive ? 'var(--btn-primary-bg)' : 'transparent',
+                    color: isActive ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
                     fontWeight: 600,
                     fontSize: '0.82rem',
                     cursor: 'pointer',
@@ -177,27 +201,59 @@ export default function App() {
             })}
           </nav>
 
-          {/* Right Controls: Global Language Selector & Status */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Right Controls: Global Language Selector, Theme Switcher & Status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Theme Switcher Toggle */}
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '7px 10px',
+                borderRadius: '10px',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--accent-aqua)';
+                e.currentTarget.style.color = 'var(--accent-aqua)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+            >
+              {theme === 'light' ? (
+                <Moon size={16} color="var(--primary-cod-gray)" />
+              ) : (
+                <Sun size={16} color="#fbbf24" />
+              )}
+            </button>
+
             {/* Global Indian Language Dropdown */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'rgba(255, 255, 255, 0.06)',
+              background: 'var(--bg-surface)',
               padding: '4px 10px',
               borderRadius: '10px',
-              border: '1px solid rgba(249, 115, 22, 0.35)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              border: '1px solid var(--border-subtle)',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
             }}>
-              <Globe size={15} color="var(--accent-saffron)" />
+              <Globe size={15} color="var(--accent-aqua)" />
               <select
                 value={currentLang}
                 onChange={(e) => setCurrentLang(e.target.value)}
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontSize: '0.82rem',
                   fontWeight: 600,
                   outline: 'none',
@@ -205,7 +261,7 @@ export default function App() {
                 }}
               >
                 {SUPPORTED_LANGUAGES.map((l) => (
-                  <option key={l.code} value={l.code} style={{ background: '#0b0f19', color: '#fff' }}>
+                  <option key={l.code} value={l.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                     {l.native} ({l.label})
                   </option>
                 ))}

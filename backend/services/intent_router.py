@@ -107,6 +107,11 @@ def route_intent(query: str) -> Dict[str, Any]:
     Routes user query to the most appropriate intent.
     Uses regex/keyword rules first, then TF-IDF cosine similarity fallback.
     """
+    from backend.services.conversational_handler import classify_conversational
+    conv = classify_conversational(query)
+    if conv:
+        return {"intent": f"CONVERSATIONAL_{conv}", "confidence": 0.98, "method": "conversational_fastpath"}
+
     text = query.lower().strip()
 
     # 1. Verification Fast-Path

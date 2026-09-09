@@ -119,5 +119,30 @@ class TestJourneyService(unittest.TestCase):
         self.assertTrue(pdf_bytes_100.startswith(b"%PDF-"))
         print(f"[PASS] Test 6: ReportLab PDF generated cleanly at 0% ({len(pdf_bytes_0)} bytes) and 100% ({len(pdf_bytes_100)} bytes)")
 
+    def test_07_standard_not_found_returns_clear_message_no_default_fallback(self):
+        """Tests that a non-existent standard returns not_found instead of silently defaulting to Steel Flasks."""
+        session_id = "test-sess-notfound"
+        res = start_journey(session_id, journey_type="get_certified", standard_id="IS 99999", force_new=True)
+
+        self.assertTrue(res.get("not_found"))
+        self.assertEqual(res.get("requested_standard"), "IS 99999")
+        self.assertIn("No data found", res.get("message", ""))
+        self.assertIsNone(res.get("journey_id"))
+        self.assertNotEqual(res.get("standard_id"), "IS 17803:2022")
+        print("[PASS] Test 7: Non-existent standard explicitly returns not_found and refuses default fallback")
+
+    def test_08_default_template_when_no_standard_selected(self):
+        """Tests that a new user without a selected standard receives the generic Scheme-I template (not steel flasks)."""
+        session_id = "test-sess-default-user"
+        res = start_journey(session_id, journey_type="get_certified", standard_id=None, force_new=True)
+
+        self.assertFalse(res.get("not_found", False))
+        self.assertEqual(res.get("standard_id"), "Scheme-I Template")
+        self.assertTrue(res.get("metadata", {}).get("is_default_template"))
+        self.assertIn("General Product Certification Roadmap", res.get("metadata", {}).get("title", ""))
+        self.assertNotEqual(res.get("metadata", {}).get("title"), "Stainless Steel Vacuum Flasks and Insulated Flask Containers - Specification")
+        self.assertEqual(len(res.get("steps", [])), 6)
+        print("[PASS] Test 8: Default roadmap provides generic Scheme-I template with 6 milestones")
+
 if __name__ == "__main__":
     unittest.main()

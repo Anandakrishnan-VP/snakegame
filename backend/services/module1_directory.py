@@ -3,9 +3,16 @@ Module 1: Two-Tier Directory Search
 Provides deterministic keyword and synonym matching across Indian Standards.
 """
 
+import re
 from typing import List, Dict, Any, Optional
 from difflib import SequenceMatcher
 from backend.db.database import get_db_connection
+
+STOP_WORDS = {
+    "is", "standard", "standards", "indian", "specification", "specifications",
+    "code", "codes", "in", "of", "to", "for", "and", "the", "a", "an", "on", "at", "by", "or",
+    "part", "sec", "section"
+}
 
 def search_directory(query: str, division_filter: Optional[str] = None) -> List[Dict[str, Any]]:
     """
@@ -15,9 +22,17 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
     if not query or not query.strip():
         return []
 
-    tokens = [t.strip().lower() for t in query.lower().split() if len(t.strip()) > 1]
-    if not tokens:
-        tokens = [query.lower().strip()]
+    lower_query = query.lower().strip()
+    all_tokens = [t.strip().lower() for t in lower_query.split() if len(t.strip()) > 1]
+    meaningful_tokens = [t for t in all_tokens if t not in STOP_WORDS]
+    tokens = meaningful_tokens if meaningful_tokens else all_tokens
+
+    # Detect if query explicitly specifies an Indian Standard number (e.g. "IS 99999", "99999", "IS 17803")
+    is_num_match = re.search(r'\b(?:is\s*)?(\d{3,5})\b', lower_query)
+    query_std_num = is_num_match.group(1) if is_num_match else None
+    # If the number looks like a standalone 4-digit year without 'is', do not treat as std number
+    if query_std_num and 1990 <= int(query_std_num) <= 2030 and not re.search(r'\bis\b', lower_query):
+        query_std_num = None
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -36,7 +51,6 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
     conn.close()
 
     scored_results = []
-    lower_query = query.lower().strip()
 
     for row in rows:
         score = 0.0
@@ -45,29 +59,38 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
         division = (row["division"] or "").lower()
         synonyms = [s.strip().lower() for s in (row["synonyms"] or "").split(",") if s.strip()]
 
+        # If user explicitly searched for a specific standard number, only match standards with that number
+        if query_std_num:
+            code_numbers = re.findall(r'\b\d{3,5}\b', is_code)
+            related_numbers = re.findall(r'\b\d{3,5}\b', (row["related_standards"] or "").lower())
+            if query_std_num not in code_numbers and query_std_num not in related_numbers:
+                continue
+
         # Exact IS code match
-        if is_code in lower_query or lower_query in is_code:
+        if (len(lower_query) >= 3 and lower_query != "is" and lower_query in is_code) or is_code in lower_query:
             score += 15.0
 
         # Exact title substring match
-        if lower_query in title:
+        if lower_query in title and len(lower_query) > 3:
             score += 10.0
 
         # Exact division match
-        if lower_query in division:
+        if lower_query in division and len(lower_query) > 3:
             score += 8.0
 
         # Synonym exact / substring match
         for syn in synonyms:
             if syn == lower_query:
                 score += 12.0
-            elif syn in lower_query:
+            elif len(lower_query) > 3 and (syn in lower_query or lower_query in syn):
                 score += 8.0
-            elif any(t in syn for t in tokens):
+            elif any(t in syn.split() for t in tokens if t not in STOP_WORDS):
                 score += 3.0
 
         # Token overlap in title, is_code, and division
         for token in tokens:
+            if token in STOP_WORDS:
+                continue
             if token in title:
                 score += 2.0
             if token in is_code:
@@ -77,7 +100,7 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
 
         # Fuzzy typo matching: catches 'electrnoics', 'hemlt', 'botle', 'batry', 'cemnt', etc.
         for token in tokens:
-            if len(token) >= 3:
+            if len(token) >= 3 and token not in STOP_WORDS:
                 cutoff = 0.68 if len(token) <= 5 else 0.75
                 # Check division words
                 for div_w in division.replace("&", " ").replace("(", " ").replace(")", " ").replace("/", " ").split():
@@ -115,13 +138,19 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
 
 def get_standard_by_code(is_code: str) -> Optional[Dict[str, Any]]:
     """Retrieves full record for a specific standard code."""
+    if not is_code or not is_code.strip():
+        return None
+    cleaned = is_code.strip()
+    if cleaned.upper() in ["IS", "IS:", "IS-", "IS.", "INDIAN STANDARD"]:
+        return None
+
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
         SELECT is_code, title, division, qco_status, qco_reference, related_standards, synonyms, source_url
         FROM standards
         WHERE is_code = ? OR is_code LIKE ?
-    """, (is_code, f"%{is_code}%"))
+    """, (cleaned, f"%{cleaned}%"))
     row = cursor.fetchone()
     conn.close()
 

@@ -39,6 +39,7 @@ from backend.services.guardrails import check_pre_retrieval_guardrails, validate
 from backend.services.transcription import transcribe_audio
 from backend.services.journey_service import start_journey, update_step_status, get_journey
 from backend.services.journey_pdf import generate_roadmap_pdf
+from backend.services.conversational_handler import classify_conversational, generate_conversational_response
 
 app = FastAPI(
     title="BIS Saathi API",
@@ -208,6 +209,10 @@ def augment_query_if_followup(query: str, active_topic: Optional[str]) -> str:
     if not active_topic:
         return query
 
+    # 0. Conversational pleasantries / acknowledgments should never be augmented
+    if classify_conversational(query):
+        return query
+
     lower = query.lower().strip()
 
     # 1. Anaphora / Pronoun check: explicit reference to previous topic
@@ -268,6 +273,43 @@ def api_chat(req: ChatRequest):
         refusal_response["active_topic"] = active_topic
         refusal_response["from_cache"] = False
         return refusal_response
+
+    # Step 2.5: Conversational Fast-Path ("ok", "got it", "thank you", "bye", "hi", etc.)
+    # Gracefully replies to user acknowledgments without repeating previous answers or spitting out irrelevant standard info
+    conv_type = classify_conversational(raw_query)
+    if not conv_type and resolved_lang != "en":
+        english_check = translate_to_english_if_needed(raw_query, resolved_lang)
+        conv_type = classify_conversational(english_check)
+
+    if conv_type:
+        conv_resp = generate_conversational_response(
+            conv_type=conv_type,
+            raw_query=raw_query,
+            active_topic=active_topic,
+            persona=current_persona,
+            language=resolved_lang
+        )
+        conv_resp["session_id"] = session_id
+        conv_resp["intent"] = f"CONVERSATIONAL_{conv_type}"
+        conv_resp["resolved_language"] = resolved_lang
+        conv_resp["active_topic"] = active_topic  # Preserve active topic!
+        conv_resp["from_cache"] = False
+
+        turn_rec = {
+            "query": raw_query,
+            "intent": f"CONVERSATIONAL_{conv_type}",
+            "active_topic": active_topic,
+            "language": resolved_lang
+        }
+        update_session(
+            session_id,
+            active_topic=active_topic,
+            persona=current_persona,
+            language=resolved_lang,
+            turn_record=turn_rec,
+            increment_turn=True
+        )
+        return conv_resp
 
     # Step 3: Cache Check (Language-Aware & Persona-Aware Composite Key)
     cached_result, cached_active_topic = check_cache(raw_query, resolved_lang, persona=current_persona) or (None, None)

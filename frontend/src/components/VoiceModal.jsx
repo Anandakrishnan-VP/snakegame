@@ -192,8 +192,9 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(17, 19, 21, 0.65)',
         backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -202,19 +203,19 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
       }}
     >
       <div
-        className="glass-panel animate-fade-in"
+        className="glass-card animate-fade-in"
         style={{
           width: '100%',
           maxWidth: '540px',
-          backgroundColor: '#0c1220',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
+          backgroundColor: 'var(--bg-modal)',
+          border: '1px solid var(--border-subtle)',
           borderRadius: '16px',
           padding: '28px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+          boxShadow: 'var(--shadow-card)',
         }}
       >
         {/* Header */}
@@ -223,15 +224,15 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
             <span
               style={{
                 fontSize: '0.85rem',
-                color: 'var(--accent-saffron)',
+                color: 'var(--accent-aqua)',
                 fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: 'rgba(249, 115, 22, 0.12)',
+                background: 'rgba(13, 148, 136, 0.12)',
                 padding: '4px 10px',
                 borderRadius: '8px',
-                border: '1px solid rgba(249, 115, 22, 0.25)',
+                border: '1px solid rgba(13, 148, 136, 0.28)',
               }}
             >
               <Volume2 size={15} /> Groq Whisper Large v3
@@ -253,7 +254,7 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
 
         {/* Indian Language Dropdown */}
         <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-          <Globe size={16} color="var(--accent-saffron)" />
+          <Globe size={16} color="var(--accent-aqua)" />
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
             Language:
           </span>
@@ -264,17 +265,17 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
             style={{
               flex: 1,
               padding: '7px 12px',
-              backgroundColor: 'rgba(15, 23, 42, 0.8)',
+              backgroundColor: 'var(--bg-input)',
               border: '1px solid var(--border-subtle)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.85rem',
               outline: 'none',
               cursor: 'pointer',
             }}
           >
             {INDIAN_LANGUAGES.map((lang) => (
-              <option key={lang.code} value={lang.code} style={{ background: '#0f172a', color: '#fff' }}>
+              <option key={lang.code} value={lang.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                 {lang.label}
               </option>
             ))}
@@ -304,7 +305,7 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
               borderRadius: '50%',
               background: isRecording
                 ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-                : 'linear-gradient(135deg, #f97316, #ea580c)',
+                : 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
               border: 'none',
               color: '#fff',
               display: 'flex',
@@ -313,7 +314,7 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
               cursor: isTranscribing ? 'wait' : 'pointer',
               boxShadow: isRecording
                 ? '0 0 30px rgba(239, 68, 68, 0.7)'
-                : '0 0 25px rgba(249, 115, 22, 0.45)',
+                : '0 0 25px rgba(13, 148, 136, 0.45)',
               transition: 'all 0.3s ease',
               position: 'relative',
               zIndex: 2,
@@ -343,7 +344,7 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
             </div>
           ) : isTranscribing ? (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#38bdf8', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--accent-aqua)', fontWeight: 600 }}>
                 <Loader2 size={16} className="animate-spin" /> Transcribing with Groq Whisper Large v3...
               </div>
               <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
@@ -352,7 +353,7 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
             </div>
           ) : transcript ? (
             <div>
-              <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', color: '#10b981' }}>
+              <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', color: '#059669' }}>
                 Speech Transcribed Successfully!
               </h4>
               <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
@@ -361,7 +362,7 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
             </div>
           ) : (
             <div>
-              <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', color: '#fff' }}>
+              <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
                 Ready to Record
               </h4>
               <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
@@ -427,12 +428,15 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
               backgroundColor: 'var(--bg-input)',
               border: '1px solid var(--border-subtle)',
               borderRadius: '10px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.95rem',
               outline: 'none',
               resize: 'none',
               lineHeight: 1.5,
+              transition: 'border-color 0.2s'
             }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent-aqua)'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
           />
         </div>
 

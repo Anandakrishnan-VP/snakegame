@@ -271,10 +271,10 @@ export default function ChatView({
               alignItems: 'center',
               gap: '6px',
               padding: '3px 10px',
-              background: 'rgba(56, 189, 248, 0.15)',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              background: 'rgba(13, 148, 136, 0.12)',
+              border: '1px solid rgba(13, 148, 136, 0.3)',
               borderRadius: '9999px',
-              color: '#38bdf8',
+              color: 'var(--accent-aqua)',
               fontSize: '0.8rem',
               fontWeight: 700,
               fontFamily: 'JetBrains Mono'
@@ -296,23 +296,23 @@ export default function ChatView({
             gap: '6px',
             padding: '5px 12px',
             borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.06)',
+            background: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
-            color: 'var(--text-muted)',
+            color: 'var(--text-secondary)',
             fontSize: '0.78rem',
             fontWeight: 500,
             cursor: 'pointer',
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#fff';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            e.currentTarget.style.color = 'var(--accent-aqua)';
+            e.currentTarget.style.borderColor = 'var(--border-active)';
+            e.currentTarget.style.background = 'var(--bg-card-hover)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-muted)';
+            e.currentTarget.style.color = 'var(--text-secondary)';
             e.currentTarget.style.borderColor = 'var(--border-subtle)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+            e.currentTarget.style.background = 'var(--bg-surface)';
           }}
         >
           <RotateCcw size={13} /> New Chat
@@ -331,29 +331,32 @@ export default function ChatView({
               <div style={{
                 maxWidth: '75%',
                 padding: '14px 18px',
-                background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(249, 115, 22, 0.15) 100%)',
-                border: '1px solid rgba(249, 115, 22, 0.3)',
+                background: 'linear-gradient(135deg, #111315 0%, #1e2629 100%)',
+                border: '1px solid rgba(13, 148, 136, 0.25)',
                 borderRadius: '16px 16px 4px 16px',
-                color: '#fff',
+                color: '#ffffff',
                 fontSize: '0.96rem',
-                lineHeight: 1.5
+                lineHeight: 1.5,
+                boxShadow: '0 4px 12px rgba(17, 19, 21, 0.15)'
               }}>
                 {msg.text}
               </div>
             ) : (
               /* Assistant 4-Part Answer Card */
-              <div className="glass-panel" style={{
+              <div className="glass-card" style={{
                 maxWidth: '88%',
                 borderRadius: '16px',
                 overflow: 'hidden',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
                 boxShadow: 'var(--shadow-card)'
               }}>
                 {/* Persona Context Banner */}
                 <div style={{
                   padding: '9px 20px',
                   background: msg.persona === 'consumer'
-                    ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.02) 100%)'
-                    : 'linear-gradient(90deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.02) 100%)',
+                    ? 'rgba(13, 148, 136, 0.08)'
+                    : 'rgba(17, 19, 21, 0.04)',
                   borderBottom: '1px solid var(--border-subtle)',
                   display: 'flex',
                   alignItems: 'center',
@@ -371,9 +374,9 @@ export default function ChatView({
                         borderRadius: '9999px',
                         fontSize: '0.74rem',
                         fontWeight: 700,
-                        color: '#34d399',
-                        background: 'rgba(16, 185, 129, 0.18)',
-                        border: '1px solid rgba(16, 185, 129, 0.35)'
+                        color: 'var(--accent-aqua)',
+                        background: 'rgba(13, 148, 136, 0.14)',
+                        border: '1px solid rgba(13, 148, 136, 0.3)'
                       }}>
                         <Users size={12} /> Consumer Safety & Buying Advisory
                       </span>
@@ -386,9 +389,9 @@ export default function ChatView({
                         borderRadius: '9999px',
                         fontSize: '0.74rem',
                         fontWeight: 700,
-                        color: 'var(--accent-saffron)',
-                        background: 'rgba(249, 115, 22, 0.18)',
-                        border: '1px solid rgba(249, 115, 22, 0.35)'
+                        color: 'var(--text-primary)',
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)'
                       }}>
                         <Building2 size={12} /> MSME Compliance & Licensing Advisory
                       </span>
@@ -402,17 +405,17 @@ export default function ChatView({
                 </div>
 
                 {/* 1. Direct Answer */}
-                <div style={{ padding: '18px 20px', background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '18px 20px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-subtle)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                     <div style={{
                       width: '24px',
                       height: '24px',
                       borderRadius: '50%',
-                      background: msg.persona === 'consumer' ? '#10b981' : 'var(--accent-saffron)',
+                      background: msg.persona === 'consumer' ? '#0d9488' : 'var(--primary-cod-gray)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#fff',
+                      color: '#ffffff',
                       fontSize: '0.75rem',
                       fontWeight: 700
                     }}>
@@ -421,24 +424,24 @@ export default function ChatView({
                     <span style={{
                       fontSize: '0.82rem',
                       fontWeight: 700,
-                      color: msg.persona === 'consumer' ? '#34d399' : 'var(--accent-saffron)',
+                      color: msg.persona === 'consumer' ? 'var(--accent-aqua)' : 'var(--accent-aqua)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em'
                     }}>
                       {msg.persona === 'consumer' ? 'Product Safety & Quality Summary' : 'Industrial Compliance Answer'}
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.98rem', color: '#fff', lineHeight: 1.6, fontWeight: 500 }}>
+                  <p style={{ margin: 0, fontSize: '0.98rem', color: 'var(--text-primary)', lineHeight: 1.6, fontWeight: 500 }}>
                     {msg.answer}
                   </p>
                 </div>
 
                 {/* 2. What this means */}
                 {msg.what_it_means && (
-                  <div style={{ padding: '14px 20px', background: 'rgba(0, 0, 0, 0.2)', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ padding: '14px 20px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)' }}>
                     <span style={{
                       fontSize: '0.78rem',
-                      color: msg.persona === 'consumer' ? '#a7f3d0' : 'var(--text-muted)',
+                      color: 'var(--text-secondary)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
                       fontWeight: 600,
@@ -447,7 +450,7 @@ export default function ChatView({
                     }}>
                       {msg.persona === 'consumer' ? '🔍 What to Check Before Buying (Packaging & Safety)' : '🏭 Factory & Scheme Implications (MSME & Audit)'}
                     </span>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       {msg.what_it_means}
                     </p>
                   </div>
@@ -457,14 +460,14 @@ export default function ChatView({
                 {msg.next_action && (
                   <div style={{
                     padding: '14px 20px',
-                    background: msg.persona === 'consumer' ? 'rgba(16, 185, 129, 0.04)' : 'rgba(56, 189, 248, 0.04)',
+                    background: msg.persona === 'consumer' ? 'rgba(13, 148, 136, 0.05)' : 'rgba(17, 19, 21, 0.03)',
                     borderBottom: '1px solid var(--border-subtle)'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <CornerDownRight size={14} color={msg.persona === 'consumer' ? '#34d399' : '#38bdf8'} />
+                      <CornerDownRight size={14} color="var(--accent-aqua)" />
                       <span style={{
                         fontSize: '0.78rem',
-                        color: msg.persona === 'consumer' ? '#34d399' : '#38bdf8',
+                        color: 'var(--accent-aqua)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.04em',
                         fontWeight: 600
@@ -472,7 +475,7 @@ export default function ChatView({
                         {msg.persona === 'consumer' ? 'Citizen Action: Verify on BIS Care App / Grievance' : 'Manufacturer Roadmap: Form V & Testing Action'}
                       </span>
                     </div>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, fontWeight: 500 }}>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 500 }}>
                       {msg.next_action}
                     </p>
 
@@ -481,11 +484,11 @@ export default function ChatView({
                         <button
                           onClick={() => onStartJourney(msg.active_topic || msg.evidence_tag.reference)}
                           style={{
-                            background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(234, 88, 12, 0.3) 100%)',
-                            border: '1px solid var(--accent-saffron)',
-                            color: '#fff',
-                            borderRadius: '6px',
-                            padding: '6px 14px',
+                            background: 'var(--btn-primary-bg)',
+                            color: 'var(--btn-primary-text)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 16px',
                             fontSize: '0.82rem',
                             fontWeight: 600,
                             cursor: 'pointer',
@@ -493,7 +496,7 @@ export default function ChatView({
                             alignItems: 'center',
                             gap: '6px',
                             transition: 'all 0.2s ease',
-                            boxShadow: '0 2px 10px rgba(249, 115, 22, 0.2)'
+                            boxShadow: '0 2px 10px var(--accent-aqua-glow)'
                           }}
                         >
                           <Award size={14} /> Start Certification Journey Wizard <ArrowRight size={12} />
@@ -507,7 +510,8 @@ export default function ChatView({
                 {msg.evidence_tag && (
                   <div style={{
                     padding: '12px 20px',
-                    background: 'rgba(0, 0, 0, 0.35)',
+                    background: 'var(--bg-surface)',
+                    borderTop: '1px solid var(--border-subtle)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -519,7 +523,7 @@ export default function ChatView({
                       <span style={{
                         fontSize: '0.8rem',
                         fontWeight: 600,
-                        color: '#38bdf8',
+                        color: 'var(--accent-aqua)',
                         fontFamily: 'JetBrains Mono'
                       }}>
                         {msg.evidence_tag.reference || 'BIS Database'}
@@ -541,10 +545,10 @@ export default function ChatView({
                           target="_blank"
                           rel="noreferrer"
                           style={{
-                            background: 'rgba(56, 189, 248, 0.12)',
-                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            background: 'rgba(13, 148, 136, 0.12)',
+                            border: '1px solid rgba(13, 148, 136, 0.3)',
                             borderRadius: '6px',
-                            color: '#38bdf8',
+                            color: 'var(--accent-aqua)',
                             padding: '4px 10px',
                             fontSize: '0.78rem',
                             fontWeight: 600,
@@ -562,10 +566,10 @@ export default function ChatView({
                       <button
                         onClick={() => onInspectEvidence(msg.evidence_tag)}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.06)',
+                          background: 'var(--bg-card)',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '6px',
-                          color: 'var(--accent-saffron-light)',
+                          color: 'var(--accent-aqua)',
                           padding: '4px 12px',
                           fontSize: '0.78rem',
                           fontWeight: 600,
@@ -588,7 +592,7 @@ export default function ChatView({
 
         {loading && (
           <div style={{ display: 'flex', gap: '8px', padding: '12px 18px', background: 'var(--bg-glass)', borderRadius: '12px', width: 'fit-content' }}>
-            <Sparkles size={18} color="var(--accent-saffron)" className="animate-spin" />
+            <Sparkles size={18} color="var(--accent-aqua)" className="animate-spin" />
             <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>Consulting BIS knowledge base & compliance chain...</span>
           </div>
         )}
@@ -614,7 +618,7 @@ export default function ChatView({
           flexWrap: 'wrap',
           gap: '10px',
           padding: '8px 16px 6px 16px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+          borderBottom: '1px solid var(--border-subtle)'
         }}>
           {/* Persona Toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -623,7 +627,7 @@ export default function ChatView({
             </span>
             <div style={{
               display: 'inline-flex',
-              background: 'rgba(0, 0, 0, 0.35)',
+              background: 'var(--bg-surface)',
               borderRadius: '8px',
               padding: '2px',
               border: '1px solid var(--border-subtle)'
@@ -639,13 +643,13 @@ export default function ChatView({
                   borderRadius: '6px',
                   border: 'none',
                   background: persona === 'msme'
-                    ? 'linear-gradient(135deg, var(--accent-saffron) 0%, #ea580c 100%)'
+                    ? 'var(--btn-primary-bg)'
                     : 'transparent',
-                  color: persona === 'msme' ? '#fff' : 'var(--text-secondary)',
+                  color: persona === 'msme' ? 'var(--btn-primary-text)' : 'var(--text-secondary)',
                   fontSize: '0.78rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  boxShadow: persona === 'msme' ? '0 2px 8px rgba(249, 115, 22, 0.3)' : 'none',
+                  boxShadow: persona === 'msme' ? '0 2px 8px rgba(17, 19, 21, 0.2)' : 'none',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -662,13 +666,13 @@ export default function ChatView({
                   borderRadius: '6px',
                   border: 'none',
                   background: persona === 'consumer'
-                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
                     : 'transparent',
-                  color: persona === 'consumer' ? '#fff' : 'var(--text-secondary)',
+                  color: persona === 'consumer' ? '#ffffff' : 'var(--text-secondary)',
                   fontSize: '0.78rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  boxShadow: persona === 'consumer' ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none',
+                  boxShadow: persona === 'consumer' ? '0 2px 8px rgba(5, 150, 105, 0.3)' : 'none',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -682,19 +686,19 @@ export default function ChatView({
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: 'rgba(0, 0, 0, 0.35)',
+            background: 'var(--bg-surface)',
             padding: '4px 10px',
             borderRadius: '8px',
             border: '1px solid var(--border-subtle)'
           }}>
-            <Globe size={14} color="var(--accent-saffron)" />
+            <Globe size={14} color="var(--accent-aqua)" />
             <select
               value={currentLang}
               onChange={(e) => setCurrentLang && setCurrentLang(e.target.value)}
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 outline: 'none',
@@ -702,7 +706,7 @@ export default function ChatView({
               }}
             >
               {SUPPORTED_LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code} style={{ background: '#0b0f19', color: '#fff' }}>
+                <option key={l.code} value={l.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                   {l.native} ({l.label})
                 </option>
               ))}
@@ -729,21 +733,23 @@ export default function ChatView({
               style={{
                 whiteSpace: 'nowrap',
                 fontSize: '0.75rem',
-                padding: '3px 10px',
+                padding: '4px 12px',
                 borderRadius: '9999px',
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 color: 'var(--text-secondary)',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.4)';
-                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.borderColor = 'var(--accent-aqua)';
+                e.currentTarget.style.color = 'var(--accent-aqua)';
+                e.currentTarget.style.background = 'var(--bg-card-hover)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--border-subtle)';
                 e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.background = 'var(--bg-surface)';
               }}
             >
               {qp.label}
@@ -761,9 +767,9 @@ export default function ChatView({
               style={{
                 padding: '11px',
                 borderRadius: '10px',
-                background: 'rgba(255, 255, 255, 0.06)',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
-                color: 'var(--accent-saffron)',
+                color: 'var(--accent-aqua)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -771,10 +777,12 @@ export default function ChatView({
                 transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(249, 115, 22, 0.15)';
+                e.currentTarget.style.background = 'rgba(13, 148, 136, 0.12)';
+                e.currentTarget.style.borderColor = 'var(--accent-aqua)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                e.currentTarget.style.background = 'var(--bg-surface)';
+                e.currentTarget.style.borderColor = 'var(--border-subtle)';
               }}
             >
               <Mic size={19} />
@@ -795,13 +803,13 @@ export default function ChatView({
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '10px',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontSize: '0.92rem',
                 outline: 'none',
                 transition: 'border-color 0.2s ease'
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'var(--accent-saffron)';
+                e.currentTarget.style.borderColor = 'var(--accent-aqua)';
               }}
               onBlur={(e) => {
                 e.currentTarget.style.borderColor = 'var(--border-subtle)';

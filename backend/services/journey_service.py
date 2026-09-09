@@ -78,15 +78,27 @@ def start_journey(
                 if candidates:
                     standard = candidates[0]
 
+        is_default_template = False
         if not standard:
-            # Default fallback standard (Stainless Steel Water Bottles)
-            standard = get_standard_by_code("IS 17803:2022") or {
-                "is_code": "IS 17803:2022",
-                "title": "Stainless Steel Vacuum Flasks and Insulated Containers",
-                "qco_status": "Mandatory",
-                "qco_reference": "QCO S.O. 853(E)",
-                "source_url": "https://www.bis.gov.in"
-            }
+            if standard_id and standard_id.strip().lower() not in ["default", "template", "sample", "none"]:
+                conn.close()
+                return {
+                    "not_found": True,
+                    "requested_standard": standard_id,
+                    "journey_type": journey_type,
+                    "message": f"No data found for Indian Standard \"{standard_id}\" in the BIS Saathi directory.",
+                    "suggestion": "This standard is not currently indexed in our local directory, or the code may contain a typo. You can verify it on the official BIS Standards portal (services.bis.gov.in) or choose from the supported standards below."
+                }
+            else:
+                # Default roadmap for new users who haven't selected a specific standard yet
+                is_default_template = True
+                standard = {
+                    "is_code": "Scheme-I Template",
+                    "title": "General Product Certification Roadmap (Scheme-I Template)",
+                    "qco_status": "Scheme-I Template",
+                    "qco_reference": "BIS (Conformity Assessment) Regulations, 2018",
+                    "source_url": "https://www.manakonline.in"
+                }
 
         resolved_standard_id = standard.get("is_code")
         qco_status = (standard.get("qco_status") or "").lower()
@@ -137,13 +149,25 @@ def start_journey(
         metadata = {
             "standard_id": resolved_standard_id,
             "title": standard.get("title", ""),
-            "qco_status": standard.get("qco_status", "Mandatory"),
+            "qco_status": "Scheme-I Template" if is_default_template else standard.get("qco_status", "Mandatory"),
             "qco_reference": standard.get("qco_reference", ""),
             "scheme_name": scheme_details.get("name", scheme_code),
             "governing_law": scheme_details.get("governing_law", "BIS Act, 2016"),
             "portal": scheme_details.get("portal", "https://www.manakonline.in"),
             "msme_benefit": scheme_details.get("msme_benefit", ""),
+            "is_default_template": is_default_template,
             "labs": [
+                {
+                    "name": "BIS Central Laboratory (CL Sahibabad)",
+                    "city": "Ghaziabad (NCR)",
+                    "phone": "+91-120-2771092"
+                },
+                {
+                    "name": "BIS Western Regional Office Laboratory",
+                    "city": "Mumbai",
+                    "phone": "+91-22-28329295"
+                }
+            ] if is_default_template else [
                 {
                     "name": l.get("lab_name"),
                     "city": l.get("city"),

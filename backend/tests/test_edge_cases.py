@@ -182,6 +182,37 @@ def test_11_persona_cache_and_response_isolation():
 
     print("[PASS] Edge Case 11: Persona-aware cache and deterministic synthesis isolation")
 
+def test_12_conversational_acknowledgments_and_thanks():
+    from backend.services.conversational_handler import classify_conversational, generate_conversational_response
+    from backend.main import augment_query_if_followup
+
+    # 1. Classification
+    assert classify_conversational("ok") == "ACK"
+    assert classify_conversational("okay") == "ACK"
+    assert classify_conversational("got it") == "ACK"
+    assert classify_conversational("noted") == "ACK"
+    assert classify_conversational("thanks") == "THANKS"
+    assert classify_conversational("thank you so much") == "THANKS"
+    assert classify_conversational("bye") == "CLOSING"
+    assert classify_conversational("hello") == "GREETING"
+    assert classify_conversational("What is IS 4151?") is None
+    assert classify_conversational("ok but what about the fee?") is None
+
+    # 2. Augment must NOT pollute conversational turns
+    clean_aug = augment_query_if_followup("ok", "IS 4151:2015")
+    assert clean_aug == "ok", f"Expected 'ok', got '{clean_aug}'"
+
+    # 3. Response generation
+    res = generate_conversational_response("ACK", "ok", active_topic="IS 4151:2015", persona="msme", language="en")
+    assert "Understood" in res["answer"] or "Glad" in res["answer"]
+    assert "IS 4151:2015" in res["answer"] or "IS 4151:2015" in res["what_it_means"]
+    assert res["persona"] == "msme"
+
+    # 4. Route intent
+    r_intent = route_intent("ok")
+    assert r_intent["intent"] == "CONVERSATIONAL_ACK"
+    print("[PASS] Edge Case 12: Conversational acknowledgments & pleasantries handled gracefully without repetition")
+
 if __name__ == "__main__":
     test_1_directory_without_deep_clause()
     test_2_deep_clause_non_flagship_boundary()
@@ -194,4 +225,5 @@ if __name__ == "__main__":
     test_9_out_of_scope_rejection()
     test_10_deterministic_failover()
     test_11_persona_cache_and_response_isolation()
-    print("\nALL 11 SPECIFICATION & PERSONA EDGE-CASE TESTS PASSED!")
+    test_12_conversational_acknowledgments_and_thanks()
+    print("\nALL 12 SPECIFICATION & PERSONA EDGE-CASE TESTS PASSED!")

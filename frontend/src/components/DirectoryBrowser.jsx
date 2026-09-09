@@ -52,16 +52,17 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
           alignItems: 'center',
           gap: '8px',
           padding: '6px 14px',
-          background: 'rgba(16, 185, 129, 0.12)',
+          background: 'rgba(13, 148, 136, 0.12)',
           borderRadius: '9999px',
-          color: '#34d399',
+          color: 'var(--accent-aqua)',
           fontSize: '0.85rem',
           fontWeight: 600,
-          marginBottom: '12px'
+          marginBottom: '12px',
+          border: '1px solid rgba(13, 148, 136, 0.28)'
         }}>
           <BookOpen size={16} /> {t('directory_title')}
         </div>
-        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: '#fff' }}>
+        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
           {t('directory_title')}
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
@@ -83,10 +84,13 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
               backgroundColor: 'var(--bg-input)',
               border: '1px solid var(--border-subtle)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.95rem',
-              outline: 'none'
+              outline: 'none',
+              transition: 'border-color 0.2s ease'
             }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent-aqua)'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
           />
         </div>
 
@@ -100,13 +104,16 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
               backgroundColor: 'var(--bg-input)',
               border: '1px solid var(--border-subtle)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.9rem',
-              outline: 'none'
+              outline: 'none',
+              transition: 'border-color 0.2s ease'
             }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent-aqua)'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
           >
             {divisions.map((d) => (
-              <option key={d} value={d} style={{ background: '#0b0f19' }}>{d}</option>
+              <option key={d} value={d} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{d}</option>
             ))}
           </select>
         </div>
@@ -122,7 +129,7 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
                   fontFamily: 'JetBrains Mono',
                   fontWeight: 700,
                   fontSize: '1.1rem',
-                  color: '#38bdf8'
+                  color: 'var(--accent-aqua)'
                 }}>
                   {s.is_code}
                 </span>
@@ -137,25 +144,25 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
                 </span>
               </div>
 
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#fff', lineHeight: 1.4 }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.4 }}>
                 {s.title}
               </h4>
 
-              <div style={{ fontSize: '0.8rem', color: 'var(--accent-saffron)', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--accent-aqua)', marginBottom: '10px', fontWeight: 600 }}>
                 Division: {s.division}
               </div>
 
               {s.qco_reference && (
                 <div style={{
                   padding: '8px 12px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  borderLeft: '3px solid #38bdf8',
+                  backgroundColor: 'var(--bg-surface)',
+                  borderLeft: '3px solid var(--accent-aqua)',
                   borderRadius: '4px',
                   fontSize: '0.8rem',
-                  color: '#cbd5e1',
+                  color: 'var(--text-secondary)',
                   marginBottom: '12px'
                 }}>
-                  <strong>QCO:</strong> {s.qco_reference}
+                  <strong style={{ color: 'var(--text-primary)' }}>QCO:</strong> {s.qco_reference}
                 </div>
               )}
 
@@ -166,9 +173,10 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
                     <span key={idx} style={{
                       fontSize: '0.72rem',
                       padding: '2px 8px',
-                      background: 'rgba(255, 255, 255, 0.05)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '4px',
-                      color: 'var(--text-muted)'
+                      color: 'var(--text-secondary)'
                     }}>
                       {syn.trim()}
                     </span>
