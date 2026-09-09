@@ -1,0 +1,163 @@
+import React, { useState, useEffect } from 'react';
+import { FlaskConical, MapPin, Mail, Phone, ShieldCheck, Search, Filter } from 'lucide-react';
+
+export default function LabFinder() {
+  const [labs, setLabs] = useState([]);
+  const [city, setCity] = useState('');
+  const [selectedStandard, setSelectedStandard] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const cities = ['All Cities', 'Ghaziabad', 'Mumbai', 'Delhi', 'Chennai', 'Kolkata', 'Chandigarh', 'Pune', 'Bengaluru'];
+  const standardsList = [
+    { code: '', label: 'All Standards' },
+    { code: 'IS 17803:2022', label: 'IS 17803 (Stainless Steel Vacuum Flasks)' },
+    { code: 'IS 9873 (Part 1):2019', label: 'IS 9873 (Safety of Toys)' },
+    { code: 'IS 16046 (Part 2):2018', label: 'IS 16046 (Lithium-ion Batteries & Power Banks)' },
+    { code: 'IS 4151:2015', label: 'IS 4151 (Two-Wheeler Helmets)' },
+    { code: 'IS 14543:2016', label: 'IS 14543 (Packaged Drinking Water)' },
+    { code: 'IS 1489 (Part 1):2015', label: 'IS 1489 (PPC Cement)' }
+  ];
+
+  const fetchLabs = async () => {
+    setLoading(true);
+    try {
+      let url = 'http://localhost:8000/api/labs?';
+      if (selectedStandard) url += `is_code=${encodeURIComponent(selectedStandard)}&`;
+      if (city && city !== 'All Cities') url += `city=${encodeURIComponent(city)}&`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+      setLabs(data);
+    } catch (err) {
+      console.error("Failed to fetch labs", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLabs();
+  }, [city, selectedStandard]);
+
+  return (
+    <div style={{ maxWidth: '950px', margin: '0 auto', padding: '10px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '6px 14px',
+          background: 'rgba(56, 189, 248, 0.12)',
+          borderRadius: '9999px',
+          color: '#38bdf8',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          marginBottom: '12px'
+        }}>
+          <FlaskConical size={16} /> Laboratory Recognition Scheme (LRS)
+        </div>
+        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: '#fff' }}>
+          BIS Recognized Testing Laboratories Locator
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
+          Find NABL-accredited and BIS Central/Regional testing laboratories mapped to specific product standards across India.
+        </p>
+      </div>
+
+      {/* Filter Card */}
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 250px' }}>
+          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Filter by Standard</label>
+          <select
+            value={selectedStandard}
+            onChange={(e) => setSelectedStandard(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 14px',
+              backgroundColor: 'var(--bg-input)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '8px',
+              color: '#fff',
+              fontSize: '0.9rem',
+              outline: 'none'
+            }}
+          >
+            {standardsList.map((s) => (
+              <option key={s.code} value={s.code} style={{ background: '#0b0f19' }}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ flex: '1 1 200px' }}>
+          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Filter by City</label>
+          <select
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 14px',
+              backgroundColor: 'var(--bg-input)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '8px',
+              color: '#fff',
+              fontSize: '0.9rem',
+              outline: 'none'
+            }}
+          >
+            {cities.map((c) => (
+              <option key={c} value={c} style={{ background: '#0b0f19' }}>{c}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Labs List */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: '16px' }}>
+        {labs.map((lab) => (
+          <div key={lab.lab_id} className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' }}>
+                <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#fff' }}>{lab.lab_name}</h4>
+                <span style={{
+                  fontSize: '0.75rem',
+                  padding: '4px 10px',
+                  borderRadius: '9999px',
+                  background: lab.lab_type === 'Central' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                  color: lab.lab_type === 'Central' ? 'var(--accent-saffron)' : '#38bdf8',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap'
+                }}>
+                  {lab.lab_type} Lab
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px' }}>
+                <MapPin size={15} color="var(--accent-saffron)" />
+                <span>{lab.address}, {lab.city}, {lab.state}</span>
+              </div>
+
+              {lab.is_nabl_accredited && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#34d399', fontSize: '0.78rem', background: 'rgba(16, 185, 129, 0.1)', padding: '3px 8px', borderRadius: '4px', marginBottom: '12px' }}>
+                  <ShieldCheck size={14} /> NABL ISO/IEC 17025 Accredited
+                </div>
+              )}
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '12px', marginTop: '12px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {lab.contact_email && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Mail size={13} /> {lab.contact_email}
+                </span>
+              )}
+              {lab.phone && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Phone size={13} /> {lab.phone}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
