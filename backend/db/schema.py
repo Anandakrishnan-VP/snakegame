@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS session_state (
     persona TEXT DEFAULT 'general', -- 'consumer', 'msme', 'general'
     language TEXT DEFAULT 'en',
     turn_count INTEGER DEFAULT 0,
+    turn_history TEXT DEFAULT '[]',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

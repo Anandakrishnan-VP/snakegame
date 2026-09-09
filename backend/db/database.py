@@ -27,17 +27,30 @@ def get_db_connection():
 
 def init_db(force_reseed: bool = False):
     """Initializes schema and seeds all tables."""
-    if force_reseed and DB_PATH.exists():
-        try:
-            os.remove(DB_PATH)
-        except Exception as e:
-            print(f"Warning removing old DB: {e}")
-
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Create tables
+    # Create tables if not exists
     cursor.executescript(SCHEMA_SQL)
+
+    # Automatic migration: ensure turn_history column exists on session_state
+    try:
+        cursor.execute("PRAGMA table_info(session_state)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "turn_history" not in cols:
+            cursor.execute("ALTER TABLE session_state ADD COLUMN turn_history TEXT DEFAULT '[]'")
+            conn.commit()
+    except Exception as e:
+        print(f"Session state schema check: {e}")
+
+    if force_reseed:
+        tables = ["standards", "standard_chunks", "certification_steps", "verification_registry", "testing_labs", "lab_standard_map", "faq"]
+        for t in tables:
+            try:
+                cursor.execute(f"DELETE FROM {t}")
+            except Exception:
+                pass
+        conn.commit()
 
     # Check if already seeded
     cursor.execute("SELECT COUNT(*) FROM standards")

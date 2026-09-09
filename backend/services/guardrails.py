@@ -73,6 +73,7 @@ def generate_refusal_response(reason: str, language: str = "en") -> Dict[str, An
                 "reference": "BIS Saathi Scope Guardrail",
                 "status": "not determined",
                 "clause_number": "Scope Boundary",
+                "clause_summary": f"Refusal enforced: {reason}",
                 "verbatim_excerpt": f"Refusal enforced: {reason}",
                 "source_url": "https://www.bis.gov.in"
             },
@@ -89,6 +90,7 @@ def generate_refusal_response(reason: str, language: str = "en") -> Dict[str, An
             "reference": "BIS Saathi Scope Guardrail",
             "status": "not determined",
             "clause_number": "Scope Boundary",
+            "clause_summary": f"Refusal enforced: {reason}",
             "verbatim_excerpt": f"Refusal enforced: {reason}",
             "source_url": "https://www.bis.gov.in"
         },

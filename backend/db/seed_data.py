@@ -208,7 +208,7 @@ STANDARDS_SEED = [
     }
 ]
 
-# Tier B Flagship Deep-Clause Curated Chunks (Verbatim text from official publications)
+# Tier B Flagship Deep-Clause Curated Chunks (Paraphrased technical summaries of official standards)
 CHUNKS_SEED = [
     # Flagship 1: IS 9873 (Part 1):2019 / IS 17803:2022 (Child & Consumer Safety)
     {
@@ -217,8 +217,8 @@ CHUNKS_SEED = [
         "clause": "4.1",
         "sub_clause": "4.1.1",
         "page": 7,
-        "content": "Normal use and foreseeable abuse: Toys shall be constructed so that they do not present mechanical risks under normal and reasonably foreseeable conditions of use, taking into account the behavior of children. The tests described in Clause 5 simulate conditions under which toys may be subjected during use.",
-        "source": "Bureau of Indian Standards: IS 9873 (Part 1):2019 Safety of Toys",
+        "content": "Mechanical & Physical Safety Summary: Mandates that toys withstand anticipated normal use and reasonably foreseeable abuse by children without presenting mechanical risks. Cross-references Clause 5 physical abuse simulation testing protocols.",
+        "source": "Bureau of Indian Standards: IS 9873 (Part 1):2019 Safety of Toys (Technical Summary)",
         "source_url": "https://www.bis.gov.in/wp-content/uploads/2020/02/Toys-QCO-2020.pdf"
     },
     {
@@ -227,8 +227,8 @@ CHUNKS_SEED = [
         "clause": "4.2",
         "sub_clause": "4.2.1",
         "page": 8,
-        "content": "Small parts and choking hazards: For toys intended for children under 36 months of age, toys and removable components thereof, as well as components liberated after tension, drop, and torque testing (as specified in 5.24), shall not fit entirely within the small parts test cylinder defined in 5.2.",
-        "source": "Bureau of Indian Standards: IS 9873 (Part 1):2019 Safety of Toys",
+        "content": "Choking Hazard & Small Parts Summary: Restricts toys and detachable components intended for children under 36 months from fitting completely inside the standardized small parts test cylinder, including fragments liberated post drop and torque testing.",
+        "source": "Bureau of Indian Standards: IS 9873 (Part 1):2019 Safety of Toys (Technical Summary)",
         "source_url": "https://www.bis.gov.in/wp-content/uploads/2020/02/Toys-QCO-2020.pdf"
     },
     {
@@ -237,8 +237,8 @@ CHUNKS_SEED = [
         "clause": "4.7",
         "sub_clause": "4.7.1",
         "page": 11,
-        "content": "Edges and Sharp Points: Accessible edges of toys shall not present an unreasonable risk of injury. Metal and glass edges on toys intended for children under 96 months shall be rolled, curled, or protected with a permanent guard before and after abuse testing.",
-        "source": "Bureau of Indian Standards: IS 9873 (Part 1):2019 Safety of Toys",
+        "content": "Accessible Edges & Points Summary: Prohibits sharp metal or glass edges on toys intended for children under 96 months. Requires rolling, curling, or permanent protective guards that endure drop and impact testing.",
+        "source": "Bureau of Indian Standards: IS 9873 (Part 1):2019 Safety of Toys (Technical Summary)",
         "source_url": "https://www.bis.gov.in/wp-content/uploads/2020/02/Toys-QCO-2020.pdf"
     },
     {
@@ -247,8 +247,8 @@ CHUNKS_SEED = [
         "clause": "7.1",
         "sub_clause": "7.1.2",
         "page": 18,
-        "content": "Marking and Packaging: Toys or their packaging shall be legibly and indelibly marked with the Standard Mark (ISI mark) along with the unique licence number (CM/L-XXXXXXXXXX). The manufacturer's name, registered trade name/mark, and address, along with age grading warnings, shall be clearly visible.",
-        "source": "Bureau of Indian Standards: IS 9873 (Part 1):2019 Marking Requirements",
+        "content": "Marking & Licence Display Summary: Mandates clear and indelible display of the standard ISI Mark accompanied by the unique 7-digit CM/L licence number, manufacturer identity, and mandatory age-grading safety warnings.",
+        "source": "Bureau of Indian Standards: IS 9873 (Part 1):2019 Marking Requirements (Technical Summary)",
         "source_url": "https://www.bis.gov.in/wp-content/uploads/2020/02/Toys-QCO-2020.pdf"
     },
     {
@@ -257,8 +257,8 @@ CHUNKS_SEED = [
         "clause": "4.1",
         "sub_clause": "4.1.1",
         "page": 3,
-        "content": "Material Composition: The inner flask and all parts coming into direct contact with food or potable water shall be fabricated from food-grade stainless steel conforming to grade 304 (X04Cr19Ni9) or grade 316 of IS 6911. The material shall be non-toxic, corrosion-resistant, and free from dangerous leaching.",
-        "source": "Bureau of Indian Standards: IS 17803:2022 Stainless Steel Flasks",
+        "content": "Material Food-Contact Safety Summary: Specifies that the inner container and potable water contact surfaces must use food-grade austenitic stainless steel (Grade 304 / Grade 316 per IS 6911) ensuring non-toxicity and chemical corrosion resistance.",
+        "source": "Bureau of Indian Standards: IS 17803:2022 Stainless Steel Flasks (Technical Summary)",
         "source_url": "https://www.bis.gov.in/qco-stainless-steel-flasks-2023"
     },
     {
@@ -267,8 +267,8 @@ CHUNKS_SEED = [
         "clause": "5.2",
         "sub_clause": "5.2.3",
         "page": 5,
-        "content": "Thermal Performance Test: When filled with boiling water at 95°C and kept sealed in an ambient environment of 20°C ± 2°C for a period of 6 hours, the temperature of the water inside the insulated vacuum flask shall not fall below 60°C for flasks with capacity >= 500 ml.",
-        "source": "Bureau of Indian Standards: IS 17803:2022 Thermal Testing",
+        "content": "Thermal Retention Performance Summary: Requires insulated flasks (capacity >= 500 ml) filled with 95°C boiling water to maintain water temperature at or above 60°C after 6 hours in a 20°C ± 2°C ambient testing environment.",
+        "source": "Bureau of Indian Standards: IS 17803:2022 Thermal Testing (Technical Summary)",
         "source_url": "https://www.bis.gov.in/qco-stainless-steel-flasks-2023"
     },
     {
@@ -277,8 +277,8 @@ CHUNKS_SEED = [
         "clause": "6.1",
         "sub_clause": "6.1.1",
         "page": 6,
-        "content": "Drop Test for Durability: The flask, filled with water to rated capacity, shall withstand two successive drops from a height of 1.0 meter onto a smooth concrete floor without rupturing, leaking, or detachment of internal vacuum sealing.",
-        "source": "Bureau of Indian Standards: IS 17803:2022 Mechanical Integrity",
+        "content": "Impact & Drop Resistance Summary: Mandates that flasks filled to rated capacity survive two consecutive drops from a height of 1.0 meter onto flat concrete without structural rupture, leakage, or loss of internal vacuum.",
+        "source": "Bureau of Indian Standards: IS 17803:2022 Mechanical Integrity (Technical Summary)",
         "source_url": "https://www.bis.gov.in/qco-stainless-steel-flasks-2023"
     },
     # Flagship 2: IS 16046 (Part 2):2018 / IS 13252 (Part 1):2010 (Electronics & CRS)
@@ -288,8 +288,8 @@ CHUNKS_SEED = [
         "clause": "5.3",
         "sub_clause": "5.3.1",
         "page": 9,
-        "content": "Continuous Charging Safety: Fully discharged cells shall be charged continuously for 7 days at manufacturer recommended charging voltage and current. Cells shall not catch fire, explode, or vent hazardous gases during or after the continuous charge test.",
-        "source": "Bureau of Indian Standards: IS 16046 (Part 2):2018 Secondary Cells Safety",
+        "content": "Continuous Charging Safety Summary: Requires fully discharged cells to endure 7 days of continuous charging at manufacturer rated voltage/current without fire, explosion, or chemical venting.",
+        "source": "Bureau of Indian Standards: IS 16046 (Part 2):2018 Secondary Cells Safety (Technical Summary)",
         "source_url": "https://www.crsbis.in/BIS/product-category.do"
     },
     {
@@ -298,8 +298,8 @@ CHUNKS_SEED = [
         "clause": "7.2",
         "sub_clause": "7.2.2",
         "page": 14,
-        "content": "External Short Circuit Test: Fully charged cells and battery packs shall be short-circuited by connecting the positive and negative terminals with a total external resistance of 80 mΩ ± 20 mΩ at 55°C ± 5°C. Cells shall remain on test until case temperature returns to steady state. No fire or explosion is permitted.",
-        "source": "Bureau of Indian Standards: IS 16046 (Part 2):2018 Short Circuit Requirements",
+        "content": "External Short Circuit Safety Summary: Requires fully charged cells and battery packs short-circuited with 80 mΩ external resistance at 55°C to stabilize safely without catching fire or exploding.",
+        "source": "Bureau of Indian Standards: IS 16046 (Part 2):2018 Short Circuit Requirements (Technical Summary)",
         "source_url": "https://www.crsbis.in/BIS/product-category.do"
     },
     {
@@ -308,8 +308,8 @@ CHUNKS_SEED = [
         "clause": "9.1",
         "sub_clause": "9.1.1",
         "page": 19,
-        "content": "Compulsory Registration Marking: Each battery or power bank shall bear the BIS Standard Mark under CRS in the format: 'Self-Declaration - Conforming to IS 16046 (Part 2):2018 / IEC 62133-2, R-XXXXXXXX' accompanied by the official BIS CRS word mark. The R-number indicates unique registration with MeitY/BIS.",
-        "source": "Bureau of Indian Standards: CRS Marking Guidelines",
+        "content": "Compulsory Registration Scheme (CRS) Marking Summary: Mandates the BIS CRS mark formatted as 'Self-Declaration - Conforming to IS 16046 (Part 2):2018, R-XXXXXXXX' with the registered 8-digit R-number.",
+        "source": "Bureau of Indian Standards: CRS Marking Guidelines (Technical Summary)",
         "source_url": "https://www.crsbis.in/BIS/about-crs.do"
     },
     {
@@ -318,8 +318,8 @@ CHUNKS_SEED = [
         "clause": "1.5",
         "sub_clause": "1.5.1",
         "page": 12,
-        "content": "General electrical insulation and creepage: Components and circuits carrying hazardous voltages shall have sufficient clearance and creepage distances to prevent breakdown, fire, or electric shock under both normal operation and single-fault conditions.",
-        "source": "Bureau of Indian Standards: IS 13252 (Part 1):2010 IT Safety",
+        "content": "Electrical Insulation & Clearance Summary: Mandates prescribed physical clearance and creepage distances around hazardous voltage circuitry to protect operators from electric shock and thermal hazards under normal and fault conditions.",
+        "source": "Bureau of Indian Standards: IS 13252 (Part 1):2010 IT Safety (Technical Summary)",
         "source_url": "https://www.crsbis.in/BIS/about-crs.do"
     }
 ]

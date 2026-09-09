@@ -31,6 +31,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
         reference: 'Bureau of Indian Standards',
         status: 'confirmed',
         clause_number: 'BIS Act 2016',
+        clause_summary: 'The Bureau of Indian Standards is the National Standard Body of India established under the BIS Act 2016 for harmonious development of standardization, marking and quality certification.',
         verbatim_excerpt: 'The Bureau of Indian Standards is the National Standard Body of India established under the BIS Act 2016 for harmonious development of standardization, marking and quality certification.',
         source_url: 'https://www.bis.gov.in'
       }

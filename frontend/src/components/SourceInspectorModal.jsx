@@ -59,7 +59,7 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
             <div>
               <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#fff' }}>Official Source & Clause Inspector</h3>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Verbatim citation from authorized Bureau of Indian Standards records
+                Authorized clause summary & statutory gazette records
               </p>
             </div>
           </div>
@@ -143,11 +143,11 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
             </div>
           )}
 
-          {/* Verbatim Excerpt */}
+          {/* Clause Summary */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <FileText size={16} color="var(--accent-saffron)" />
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Original Verbatim Text / Statutory Order</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Technical Clause Summary & Statutory Order</span>
             </div>
             <div style={{
               padding: '16px',
@@ -155,12 +155,14 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
               borderLeft: '3px solid var(--accent-saffron)',
               borderRadius: '6px',
               color: '#e2e8f0',
-              fontStyle: 'italic',
               fontSize: '0.95rem',
               lineHeight: 1.6
             }}>
-              "{evidence.verbatim_excerpt || 'No specific text excerpt available.'}"
+              {evidence.clause_summary || evidence.verbatim_excerpt || 'No specific clause summary available.'}
             </div>
+            <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Note: Unaltered standard publications are commercially published by BIS via Manak Online (www.manakonline.in).
+            </p>
           </div>
 
           {/* QCO or Ministry details */}

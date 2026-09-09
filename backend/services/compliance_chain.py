@@ -6,7 +6,7 @@ QCO Status Check -> Certification Scheme & Steps (M3) -> Testing Labs (M5) -> Ev
 """
 
 from typing import Dict, Any, Optional
-from backend.services.module1_directory import search_directory, get_standard_by_code, get_flagship_chunks
+from backend.services.module1_directory import search_directory, get_standard_by_code, get_flagship_chunks, retrieve_relevant_chunks
 from backend.services.module2_matcher import match_product_to_standard
 from backend.services.module3_certification import get_certification_steps, get_scheme_overview
 from backend.services.module5_labs import find_testing_labs
@@ -36,6 +36,7 @@ def run_compliance_chain(query: str, city: Optional[str] = None, state: Optional
                 "source_type": "directory",
                 "reference": "None",
                 "status": "not determined",
+                "clause_summary": "No registered Indian Standard found for the specified product description in the local BIS registry.",
                 "verbatim_excerpt": "No registered Indian Standard found for the specified product description in the local BIS registry.",
                 "source_url": "https://www.bis.gov.in"
             }
@@ -59,13 +60,13 @@ def run_compliance_chain(query: str, city: Optional[str] = None, state: Optional
     # Step 4: Fetch Testing Laboratories
     labs = find_testing_labs(is_code=is_code, city=city, state=state)
 
-    # Step 5: Check for Tier B Deep-Clause Content
-    deep_chunks = get_flagship_chunks(is_code)
+    # Step 5: Explicit Clause-Level Retrieval (Filtered by query relevance)
+    relevant_chunks = retrieve_relevant_chunks(is_code, query, top_k=3)
 
     # Step 6: Construct Rich Evidence Tag
-    if deep_chunks:
-        # Flagship standard has verified deep clause
-        top_chunk = deep_chunks[0]
+    if relevant_chunks:
+        # Highest ranked chunk for this specific query
+        top_chunk = relevant_chunks[0]
         evidence_tag = {
             "source_type": "clause",
             "reference": f"{is_code} Clause {top_chunk['clause']}",
@@ -73,7 +74,8 @@ def run_compliance_chain(query: str, city: Optional[str] = None, state: Optional
             "clause_number": top_chunk["clause"],
             "sub_clause": top_chunk.get("sub_clause"),
             "page": top_chunk.get("page"),
-            "verbatim_excerpt": top_chunk["content"],
+            "clause_summary": top_chunk["content"],
+            "verbatim_excerpt": top_chunk["content"], # Alias for backwards compatibility
             "document_title": primary_std["title"],
             "qco_reference": qco_ref,
             "source_url": top_chunk["source_url"] or primary_std["source_url"]
@@ -87,6 +89,7 @@ def run_compliance_chain(query: str, city: Optional[str] = None, state: Optional
             "clause_number": "Directory & QCO Reference",
             "sub_clause": None,
             "page": 1,
+            "clause_summary": f"Notified under {qco_ref}. Mandatory compliance enforced by BIS.",
             "verbatim_excerpt": f"Notified under {qco_ref}. Mandatory compliance enforced by BIS.",
             "document_title": primary_std["title"],
             "qco_reference": qco_ref,
@@ -104,7 +107,7 @@ def run_compliance_chain(query: str, city: Optional[str] = None, state: Optional
         "scheme": scheme_info,
         "steps": cert_steps,
         "labs": labs[:4], # top 4 labs
-        "deep_clauses": deep_chunks,
+        "deep_clauses": relevant_chunks,
         "evidence_tag": evidence_tag,
         "persona": persona
     }

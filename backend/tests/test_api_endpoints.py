@@ -55,7 +55,7 @@ def test_clause_inspector_endpoint():
     assert res.status_code == 200
     clause = res.json()
     assert clause["chunk_id"] == "IS9873-P1-C4.2"
-    assert "choking hazards" in clause["content"].lower()
+    assert "choking hazard" in clause["content"].lower()
     print("[PASS] GET /api/clause/{chunk_id}")
 
 def test_chat_flow_and_pronoun():

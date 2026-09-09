@@ -20,17 +20,21 @@ def make_cache_key(query: str, language: str) -> str:
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
 def get_or_create_session(session_id: str, persona: str = "general", language: str = "en") -> Dict[str, Any]:
-    """Retrieves existing session or creates a new session record."""
+    """Retrieves existing session or creates a new session record with full metadata."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT session_id, active_topic, persona, language, turn_count FROM session_state WHERE session_id = ?", (session_id,))
+    cursor.execute("""
+        SELECT session_id, active_topic, persona, language, turn_count, turn_history 
+        FROM session_state 
+        WHERE session_id = ?
+    """, (session_id,))
     row = cursor.fetchone()
 
     if not row:
         cursor.execute("""
-            INSERT INTO session_state (session_id, active_topic, persona, language, turn_count)
-            VALUES (?, NULL, ?, ?, 0)
+            INSERT INTO session_state (session_id, active_topic, persona, language, turn_count, turn_history)
+            VALUES (?, NULL, ?, ?, 0, '[]')
         """, (session_id, persona, language))
         conn.commit()
         conn.close()
@@ -39,22 +43,48 @@ def get_or_create_session(session_id: str, persona: str = "general", language: s
             "active_topic": None,
             "persona": persona,
             "language": language,
-            "turn_count": 0
+            "turn_count": 0,
+            "turn_history": []
         }
     else:
         conn.close()
+        try:
+            history = json.loads(row["turn_history"] or "[]")
+        except Exception:
+            history = []
         return {
             "session_id": row["session_id"],
             "active_topic": row["active_topic"],
             "persona": row["persona"],
             "language": row["language"],
-            "turn_count": row["turn_count"]
+            "turn_count": row["turn_count"],
+            "turn_history": history
         }
 
-def update_session(session_id: str, active_topic: Optional[str] = None, persona: Optional[str] = None, language: Optional[str] = None, increment_turn: bool = True):
-    """Updates session parameters and increments turn count."""
+def update_session(
+    session_id: str,
+    active_topic: Optional[str] = None,
+    persona: Optional[str] = None,
+    language: Optional[str] = None,
+    turn_record: Optional[Dict[str, Any]] = None,
+    increment_turn: bool = True
+):
+    """Updates session parameters, persists turn history, and increments turn count."""
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # If turn_record is provided, append it to the stored turn_history JSON array
+    if turn_record is not None:
+        cursor.execute("SELECT turn_history FROM session_state WHERE session_id = ?", (session_id,))
+        hist_row = cursor.fetchone()
+        existing_history = []
+        if hist_row and hist_row["turn_history"]:
+            try:
+                existing_history = json.loads(hist_row["turn_history"])
+            except Exception:
+                existing_history = []
+        existing_history.append(turn_record)
+        cursor.execute("UPDATE session_state SET turn_history = ? WHERE session_id = ?", (json.dumps(existing_history), session_id))
 
     updates = []
     params = []

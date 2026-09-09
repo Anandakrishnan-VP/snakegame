@@ -13,11 +13,21 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_PRIMARY_MODEL = os.getenv("GROQ_PRIMARY_MODEL", "openai/gpt-oss-120b")
+GROQ_FAST_MODEL = os.getenv("GROQ_FAST_MODEL", "openai/gpt-oss-20b")
+
+def get_candidate_models():
+    """Returns ordered list of candidate Groq models."""
+    models = [GROQ_PRIMARY_MODEL, GROQ_FAST_MODEL, "qwen/qwen3.6-27b"]
+    # De-duplicate while preserving order
+    seen = set()
+    return [m for m in models if m and not (m in seen or seen.add(m))]
 
 def synthesize_with_groq(context_payload: Dict[str, Any], user_query: str, target_lang: str = "en") -> Dict[str, Any]:
     """
-    Calls Groq API (llama-3.3-70b-versatile) to synthesize the conversational response
-    strictly grounded in the provided context_payload. Falls back to rule-based synthesis if key is missing or API errors.
+    Calls Groq API to synthesize the conversational response
+    strictly grounded in the provided context_payload.
+    Attempts primary model, fast model, and qwen fallback before deterministic synthesis.
     """
     if not GROQ_API_KEY or GROQ_API_KEY.strip() == "" or context_payload.get("out_of_scope") or context_payload.get("status") == "not determined":
         return deterministic_synthesis(context_payload, user_query, target_lang)
@@ -57,26 +67,37 @@ Retrieved Verified BIS Context:
 
 Please synthesize the response JSON based solely on this verified context."""
 
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.2,
-            response_format={"type": "json_object"}
-        )
+        # Attempt candidate models in sequence
+        candidate_models = get_candidate_models()
+        last_error = None
 
-        raw_json = completion.choices[0].message.content
-        parsed = json.loads(raw_json)
+        for model_id in candidate_models:
+            try:
+                completion = client.chat.completions.create(
+                    model=model_id,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.2,
+                    response_format={"type": "json_object"}
+                )
 
-        return {
-            "answer": parsed.get("answer", ""),
-            "what_it_means": parsed.get("what_it_means", ""),
-            "next_action": parsed.get("next_action", ""),
-            "evidence_tag": evidence,
-            "provider": "groq-llama-3.3-70b"
-        }
+                raw_json = completion.choices[0].message.content
+                parsed = json.loads(raw_json)
+
+                return {
+                    "answer": parsed.get("answer", ""),
+                    "what_it_means": parsed.get("what_it_means", ""),
+                    "next_action": parsed.get("next_action", ""),
+                    "evidence_tag": evidence,
+                    "provider": f"groq-{model_id}"
+                }
+            except Exception as model_err:
+                print(f"Groq model '{model_id}' failed: {model_err}. Trying fallback...")
+                last_error = model_err
+
+        raise last_error or Exception("All candidate Groq models failed.")
 
     except Exception as e:
         print(f"Groq API call failed or unavailable ({e}), falling back to deterministic synthesis.")
@@ -141,9 +162,9 @@ def deterministic_synthesis(context_payload: Dict[str, Any], user_query: str, ta
         }
 
     if standard:
-        is_code = standard["is_code"]
-        title = standard["title"]
-        qco = standard["qco_status"]
+        is_code = standard.get("is_code", "")
+        title = standard.get("title", "")
+        qco = standard.get("qco_status", "Mandatory")
         qco_ref = standard.get("qco_reference", "BIS Mandatory Order")
 
         lab_summary = f"Testing is available at {labs[0]['lab_name']} ({labs[0]['city']})" if labs else "Samples can be tested at BIS Central Laboratory (CL Sahibabad)."

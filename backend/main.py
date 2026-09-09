@@ -3,11 +3,15 @@ FastAPI Server for BIS Saathi.
 Implements complete 8-step request lifecycle, compliance chain, verification, and directory endpoints.
 """
 
+import os
+import uuid
+from typing import Optional, List, Dict, Any
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
-import uuid
+
+load_dotenv()
 
 from backend.db.database import init_db, get_db_connection
 from backend.services.session_manager import (
@@ -35,10 +39,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for Vite frontend dev server
+# Explicit CORS Origins for Local Dev & Production / Vercel
+configured_origins = [
+    o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()
+]
+default_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+allowed_origins = list(dict.fromkeys(default_origins + configured_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow any origin in dev/demo
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -128,8 +144,12 @@ def api_chat(req: ChatRequest):
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
     # Step 1: Session Fetch / Create
-    session = get_or_create_session(session_id, persona=req.persona, language=req.language)
+    session = get_or_create_session(session_id, persona=req.persona or "general", language=req.language or "en")
     active_topic = session["active_topic"]
+    current_persona = req.persona or session.get("persona", "general")
+    if req.persona and req.persona != session.get("persona"):
+        update_session(session_id, persona=req.persona, increment_turn=False)
+        session["persona"] = req.persona
 
     # Step 2: Language Resolution
     resolved_lang = resolve_language(raw_query, explicit_lang=req.language)
@@ -147,7 +167,20 @@ def api_chat(req: ChatRequest):
     cached_result, cached_active_topic = check_cache(raw_query, resolved_lang) or (None, None)
     if cached_result:
         # Crucial §3.2 rule: Update turn and active topic even on cache hit!
-        update_session(session_id, active_topic=cached_active_topic or active_topic)
+        turn_rec = {
+            "query": raw_query,
+            "intent": cached_result.get("intent", "CACHE_HIT"),
+            "active_topic": cached_active_topic or active_topic,
+            "language": resolved_lang
+        }
+        update_session(
+            session_id,
+            active_topic=cached_active_topic or active_topic,
+            persona=current_persona,
+            language=resolved_lang,
+            turn_record=turn_rec,
+            increment_turn=True
+        )
         cached_result["from_cache"] = True
         cached_result["session_id"] = session_id
         return cached_result
@@ -167,15 +200,17 @@ def api_chat(req: ChatRequest):
 
     # Step 7: Modular Execution
     resolved_standard_code = active_topic
-    context_payload = {}
+    context_payload = {"persona": current_persona}
 
     if intent == "OUT_OF_SCOPE":
         context_payload = {
             "out_of_scope": True,
+            "persona": current_persona,
             "evidence_tag": {
                 "source_type": "faq",
                 "reference": "Scope Boundary",
                 "status": "not determined",
+                "clause_summary": "Out of scope query declined.",
                 "verbatim_excerpt": "Out of scope query declined.",
                 "source_url": "https://www.bis.gov.in"
             }
@@ -185,10 +220,12 @@ def api_chat(req: ChatRequest):
         ver_result = verify_code(raw_query)
         context_payload = {
             "verification": ver_result,
+            "persona": current_persona,
             "evidence_tag": {
                 "source_type": "registry",
                 "reference": ver_result.get("extracted_code") or "None",
                 "status": "confirmed" if ver_result.get("found") else "not determined",
+                "clause_summary": ver_result.get("message"),
                 "verbatim_excerpt": ver_result.get("message"),
                 "source_url": "https://www.manakonline.in"
             }
@@ -202,10 +239,12 @@ def api_chat(req: ChatRequest):
             "intent": "LAB_SEARCH",
             "standard_code": active_topic,
             "labs": labs[:5],
+            "persona": current_persona,
             "evidence_tag": {
                 "source_type": "directory",
                 "reference": active_topic or "BIS Recognized Testing Labs",
                 "status": "confirmed" if labs else "not determined",
+                "clause_summary": f"Found {len(labs)} accredited testing facilities mapped in the BIS Laboratory Recognition Scheme.",
                 "verbatim_excerpt": f"Found {len(labs)} accredited testing facilities mapped in the BIS Laboratory Recognition Scheme.",
                 "source_url": "https://www.bis.gov.in/laboratory-recognition-scheme/"
             }
@@ -218,10 +257,12 @@ def api_chat(req: ChatRequest):
             "intent": "CERTIFICATION_PROCESS",
             "scheme": scheme_info,
             "steps": steps,
+            "persona": current_persona,
             "evidence_tag": {
                 "source_type": "directory",
                 "reference": scheme_info["governing_law"],
                 "status": "confirmed",
+                "clause_summary": f"Operating under {scheme_info['governing_law']}. Application via {scheme_info['portal']}.",
                 "verbatim_excerpt": f"Operating under {scheme_info['governing_law']}. Application via {scheme_info['portal']}.",
                 "source_url": scheme_info["portal"]
             }
@@ -236,10 +277,12 @@ def api_chat(req: ChatRequest):
         context_payload = {
             "intent": "GENERAL_FAQ",
             "faqs": faqs,
+            "persona": current_persona,
             "evidence_tag": {
                 "source_type": "faq",
                 "reference": "BIS Citizen Charter & Consumer FAQ",
                 "status": "confirmed",
+                "clause_summary": "Guidelines sourced directly from BIS Consumer Affairs and Training manuals.",
                 "verbatim_excerpt": "Guidelines sourced directly from BIS Consumer Affairs and Training manuals.",
                 "source_url": "https://www.bis.gov.in/consumer-affairs/"
             }
@@ -251,9 +294,10 @@ def api_chat(req: ChatRequest):
             query=augmented_query,
             city=req.city,
             state=req.state,
-            persona=req.persona
+            persona=current_persona
         )
         context_payload = chain_result
+        context_payload["persona"] = current_persona
         if chain_result.get("standard"):
             resolved_standard_code = chain_result["standard"]["is_code"]
 
@@ -271,10 +315,28 @@ def api_chat(req: ChatRequest):
     response_data["from_cache"] = False
 
     # Update session state and write to language-aware cache
-    update_session(session_id, active_topic=resolved_standard_code)
+    turn_rec = {
+        "query": raw_query,
+        "intent": intent,
+        "active_topic": resolved_standard_code,
+        "language": resolved_lang
+    }
+    update_session(
+        session_id,
+        active_topic=resolved_standard_code,
+        persona=current_persona,
+        language=resolved_lang,
+        turn_record=turn_rec,
+        increment_turn=True
+    )
     write_cache(raw_query, resolved_lang, response_data, active_topic=resolved_standard_code)
 
     return response_data
+
+@app.get("/api/session/{session_id}")
+def api_get_session(session_id: str):
+    """Returns stored session state including persona, language, active_topic, and turn_history."""
+    return get_or_create_session(session_id)
 
 if __name__ == "__main__":
     import uvicorn
