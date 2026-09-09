@@ -116,6 +116,10 @@ export default function ChatView({
 
       const data = await res.json();
 
+      if (!data || !data.answer) {
+        throw new Error(data?.detail || data?.error || "Incomplete response from BIS Saathi service.");
+      }
+
       const assistantMsg = {
         id: 'asst-' + Date.now(),
         sender: 'assistant',

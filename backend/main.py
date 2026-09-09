@@ -50,25 +50,36 @@ app = FastAPI(
 async def vercel_path_normalization(request: Request, call_next):
     """
     Normalizes incoming request paths across Vercel serverless functions,
-    handling cases where rewrites send the original path in headers
-    (x-matched-path, x-forwarded-uri).
+    handling cases where rewrites route to /api/index.py.
+    Checks:
+    1. Query param override (__path__)
+    2. Vercel invoked route headers (x-invoke-path, x-forwarded-uri, x-real-url)
+    3. Direct root health check
     """
-    orig_path = (
-        request.headers.get("x-matched-path")
-        or request.headers.get("x-forwarded-uri")
-        or request.url.path
-    )
-    if "?" in orig_path:
-        orig_path = orig_path.split("?")[0]
-
     current_path = request.scope.get("path", "")
 
-    # If Vercel rewrote the destination to /api/index.py or /api/index
-    if current_path in ["/api/index.py", "/api/index"]:
-        if orig_path and orig_path not in ["/api/index.py", "/api/index"]:
-            request.scope["path"] = orig_path
+    # Only normalize if the path arrived as the handler script directly
+    if current_path in ["/api/index.py", "/api/index", "/api/index.py/", "/api/index/"]:
+        # 1. Check if Vercel passed __path__ in query parameters
+        path_override = request.query_params.get("__path__")
+        if path_override:
+            request.scope["path"] = path_override.split("?")[0].strip()
         else:
-            return JSONResponse({"status": "healthy", "service": "BIS Saathi API"})
+            # 2. Check Vercel headers for the actual invoked route
+            candidate_path = None
+            for header_name in ["x-invoke-path", "x-forwarded-uri", "x-real-url", "x-original-uri"]:
+                val = request.headers.get(header_name)
+                if val:
+                    val = val.split("?")[0].strip()
+                    if val and val not in ["/api/index.py", "/api/index", "/api/index.py/", "/api/index/"]:
+                        candidate_path = val
+                        break
+
+            if candidate_path:
+                request.scope["path"] = candidate_path
+            else:
+                # If truly visiting /api or /api/index.py directly
+                return JSONResponse({"status": "healthy", "service": "BIS Saathi API"})
 
     return await call_next(request)
 
