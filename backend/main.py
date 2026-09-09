@@ -5,11 +5,13 @@ Implements complete 8-step request lifecycle, compliance chain, verification, an
 
 import os
 import uuid
+from pathlib import Path
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, JSONResponse
+from fastapi.responses import Response, JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 load_dotenv()
@@ -49,7 +51,7 @@ async def vercel_path_normalization(request: Request, call_next):
     """
     Normalizes incoming request paths across Vercel serverless functions,
     handling cases where rewrites send the original path in headers
-    (x-matched-path, x-forwarded-uri) or strip /api prefix.
+    (x-matched-path, x-forwarded-uri).
     """
     orig_path = (
         request.headers.get("x-matched-path")
@@ -67,11 +69,6 @@ async def vercel_path_normalization(request: Request, call_next):
             request.scope["path"] = orig_path
         else:
             return JSONResponse({"status": "healthy", "service": "BIS Saathi API"})
-
-    # Ensure API subroutes start with /api (e.g. /health -> /api/health)
-    path_now = request.scope.get("path", "")
-    if not path_now.startswith("/api") and path_now not in ["/", "/docs", "/openapi.json"]:
-        request.scope["path"] = f"/api{path_now}"
 
     return await call_next(request)
 
@@ -113,7 +110,6 @@ class ChatRequest(BaseModel):
 class VerifyRequest(BaseModel):
     code: str
 
-@app.get("/")
 @app.get("/api")
 @app.get("/api/")
 @app.get("/health")
@@ -445,6 +441,25 @@ def api_get_journey_pdf(journey_id: str):
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+# Static Frontend Mount & SPA Fallback (When deployed or serving locally)
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Never intercept API routes
+        if full_path.startswith("api"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+        # If static file exists directly (e.g. favicon.svg, icons.svg)
+        target = FRONTEND_DIST / full_path
+        if target.is_file():
+            return FileResponse(str(target))
+        # Fallback to index.html for SPA client-side routes
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
 
 if __name__ == "__main__":
     import uvicorn
