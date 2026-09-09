@@ -15,7 +15,8 @@ import {
   CornerDownRight, 
   HelpCircle,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Award
 } from 'lucide-react';
 import { SUPPORTED_LANGUAGES } from '../i18n/translations';
 import { API_BASE_URL } from '../api/config';
