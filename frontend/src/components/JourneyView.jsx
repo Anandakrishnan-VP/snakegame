@@ -18,6 +18,7 @@ import {
   Sparkles,
   Loader2
 } from 'lucide-react';
+import { API_BASE_URL } from '../api/config';
 
 const QUICK_STANDARDS = [
   { code: 'IS 17803:2022', label: 'Steel Bottles (IS 17803)' },
@@ -62,7 +63,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
   const fetchExistingJourney = async (id) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/journey/${id}`);
+      const res = await fetch(`${API_BASE_URL}/api/journey/${id}`);
       if (res.ok) {
         const data = await res.json();
         setJourney(data);
@@ -70,7 +71,6 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
         if (data.journey_type) setJourneyType(data.journey_type);
       } else {
         sessionStorage.removeItem('active_journey_id');
-        initJourney(selectedStandard, journeyType, false);
       }
     } catch (e) {
       console.error('Failed to restore journey:', e);
@@ -82,7 +82,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
   const initJourney = async (standardId, type, forceNew = false) => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/journey/start', {
+      const res = await fetch(`${API_BASE_URL}/api/journey/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,7 +129,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
     }));
 
     try {
-      const res = await fetch(`http://localhost:8000/api/journey/${journey.journey_id}/step/${stepId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/journey/${journey.journey_id}/step/${stepId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -159,7 +159,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
 
   const handleDownloadPdf = () => {
     if (!journey) return;
-    const url = `http://localhost:8000/api/journey/${journey.journey_id}/pdf`;
+    const url = `${API_BASE_URL}/api/journey/${journey.journey_id}/pdf`;
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `bis_saathi_roadmap_${journey.journey_id.slice(0, 8)}.pdf`);

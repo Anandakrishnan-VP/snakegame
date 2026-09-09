@@ -410,5 +410,14 @@ npm run dev
 - **Backend Swagger Docs**: `http://127.0.0.1:8000/docs`
 - **Backend Health Check**: `http://127.0.0.1:8000/api/health`
 
+### 8.4 Production Deployment on Vercel
+BIS Saathi includes turnkey support for **Vercel** serverless deployment:
+- **FastAPI Entrypoint**: `api/index.py` exposes the ASGI app as a serverless function.
+- **Python Dependencies**: `requirements.txt` installs FastAPI, Uvicorn, Scikit-Learn, Groq, ReportLab, and Python-Multipart.
+- **Unified Routing**: `vercel.json` routes `/api/(.*)` to the serverless function and `/(.*)` to `frontend/dist/index.html`.
+- **Ephemeral SQLite Bridge**: `backend/db/database.py` automatically detects Vercel/Lambda serverless runtime and copies the seeded SQLite database into `/tmp/bis_saathi.db` so both reads and writes (sessions, journeys, cache) succeed without read-only filesystem restrictions.
+- **Environment Variables**: Add `GROQ_API_KEY` in Vercel Project Settings for full natural language and Indic speech capabilities.
+
 ---
 *BIS Saathi — Built for Smart India Hackathon (SIH26107). Empowering Indian Industry & Protecting Indian Consumers.*
+

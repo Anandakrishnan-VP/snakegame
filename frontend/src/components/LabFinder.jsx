@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FlaskConical, MapPin, Mail, Phone, ShieldCheck, Search, Filter } from 'lucide-react';
+import { API_BASE_URL } from '../api/config';
 
 export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
   const [labs, setLabs] = useState([]);
@@ -21,7 +22,7 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
   const fetchLabs = async () => {
     setLoading(true);
     try {
-      let url = 'http://localhost:8000/api/labs?';
+      let url = `${API_BASE_URL}/api/labs?`;
       if (selectedStandard) url += `is_code=${encodeURIComponent(selectedStandard)}&`;
       if (city && city !== 'All Cities') url += `city=${encodeURIComponent(city)}&`;
 

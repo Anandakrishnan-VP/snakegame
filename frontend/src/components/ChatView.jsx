@@ -18,6 +18,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { SUPPORTED_LANGUAGES } from '../i18n/translations';
+import { API_BASE_URL } from '../api/config';
 
 export default function ChatView({
   onInspectEvidence,
@@ -101,7 +102,7 @@ export default function ChatView({
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:8000/api/chat', {
+      const res = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -138,14 +139,14 @@ export default function ChatView({
           id: 'err-' + Date.now(),
           sender: 'assistant',
           answer: 'Unable to connect to the BIS Saathi backend service.',
-          what_it_means: 'The local FastAPI server may be starting up or temporarily unreachable.',
-          next_action: 'Ensure backend/main.py is running on port 8000.',
+          what_it_means: 'The backend service may be starting up or temporarily unreachable.',
+          next_action: 'Please try again in a few moments or check your connection.',
           evidence_tag: {
             source_type: 'directory',
-            reference: 'Local Server',
+            reference: 'BIS Saathi Service',
             status: 'not determined',
             verbatim_excerpt: 'Connection failed.',
-            source_url: 'http://localhost:8000'
+            source_url: '#'
           }
         }
       ]);

@@ -17,11 +17,33 @@ from backend.db.seed_data import (
     FAQ_SEED
 )
 
-DB_PATH = Path(__file__).resolve().parent.parent / "bis_saathi.db"
+import shutil
+
+SOURCE_DB_PATH = Path(__file__).resolve().parent.parent / "bis_saathi.db"
+
+def get_db_path() -> Path:
+    """
+    Returns the SQLite database path.
+    On Vercel (or AWS Lambda) where the deployment directory is read-only, copies
+    the seeded database to /tmp/bis_saathi.db so both reads and writes (sessions, journeys, cache) succeed.
+    """
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        tmp_dir = Path("/tmp") if os.name != "nt" else Path(os.getenv("TEMP", "C:/tmp"))
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_db = tmp_dir / "bis_saathi.db"
+        if not tmp_db.exists() and SOURCE_DB_PATH.exists():
+            try:
+                shutil.copy2(str(SOURCE_DB_PATH), str(tmp_db))
+            except Exception as e:
+                print(f"Warning: Failed to copy SQLite DB to /tmp: {e}")
+                return SOURCE_DB_PATH
+        return tmp_db
+    return SOURCE_DB_PATH
 
 def get_db_connection():
     """Returns a sqlite3 connection with dict-like row factory."""
-    conn = sqlite3.connect(str(DB_PATH))
+    db_path = get_db_path()
+    conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
     return conn
 

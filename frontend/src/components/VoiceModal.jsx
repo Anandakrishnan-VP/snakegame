@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Check, X, RefreshCw, Volume2, Globe, Loader2, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../api/config';
 
 const INDIAN_LANGUAGES = [
   { code: 'auto', label: 'Auto-Detect (Any Indian Language)' },
@@ -153,7 +154,7 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
       formData.append('file', audioBlob, `voice_query.${ext}`);
       formData.append('language', selectedLang);
 
-      const res = await fetch('http://localhost:8000/api/transcribe', {
+      const res = await fetch(`${API_BASE_URL}/api/transcribe`, {
         method: 'POST',
         body: formData,
       });

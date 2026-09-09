@@ -107,10 +107,25 @@ CREATE TABLE IF NOT EXISTS query_cache (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 10. Certification Journey Progress
+CREATE TABLE IF NOT EXISTS journey_progress (
+    journey_id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    journey_type TEXT NOT NULL, -- 'get_certified' or 'verify_protect'
+    standard_id TEXT,
+    scheme TEXT,
+    steps_json TEXT NOT NULL,
+    readiness_score INTEGER DEFAULT 0,
+    metadata_json TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for lightning fast lookups
 CREATE INDEX IF NOT EXISTS idx_standards_division ON standards(division);
 CREATE INDEX IF NOT EXISTS idx_chunks_standard ON standard_chunks(standard_id);
 CREATE INDEX IF NOT EXISTS idx_cert_scheme ON certification_steps(scheme, applies_to);
 CREATE INDEX IF NOT EXISTS idx_lab_map_std ON lab_standard_map(standard_id);
 CREATE INDEX IF NOT EXISTS idx_lab_city ON testing_labs(city);
+CREATE INDEX IF NOT EXISTS idx_journey_session ON journey_progress(session_id, journey_type);
 """

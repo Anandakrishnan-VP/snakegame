@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Search, ExternalLink, ShieldCheck, Tag, ArrowRight } from 'lucide-react';
+import { API_BASE_URL } from '../api/config';
 
 export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en', t = (k) => k }) {
   const [standards, setStandards] = useState([]);
@@ -21,7 +22,7 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
   const fetchStandards = async () => {
     setLoading(true);
     try {
-      let url = 'http://localhost:8000/api/directory?';
+      let url = `${API_BASE_URL}/api/directory?`;
       if (search) url += `search=${encodeURIComponent(search)}&`;
       if (division && division !== 'All Divisions') url += `division=${encodeURIComponent(division)}&`;
 

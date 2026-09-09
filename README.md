@@ -82,6 +82,38 @@ python -m backend.tests.test_api_endpoints
 
 ---
 
+---
+
+## ☁️ Deploying to Vercel
+
+BIS Saathi is pre-configured for one-click deployment on **Vercel** with a unified monorepo configuration (React + Vite frontend alongside FastAPI serverless backend):
+
+### Step 1: Push to GitHub
+Ensure all changes are committed and pushed to your GitHub repository:
+```bash
+git push origin main
+```
+
+### Step 2: Import into Vercel
+1. Go to [vercel.com](https://vercel.com) and click **"Add New..."** $\rightarrow$ **"Project"**.
+2. Select your repository.
+3. Keep the **Root Directory** as `./` (the root of the repo).
+4. Vercel automatically detects `vercel.json` for build commands and API routing.
+
+### Step 3: Configure Environment Variables
+In the **Environment Variables** section, add:
+| Variable | Value | Description |
+|---|---|---|
+| `GROQ_API_KEY` | `gsk_...` | *(Recommended)* Enables Groq LLaMA 3.3 70B natural language synthesis & Whisper v3 speech-to-text. |
+| `ALLOWED_ORIGINS` | *(Optional)* | Custom domains if not using `*.vercel.app` (all `*.vercel.app` domains are auto-allowed). |
+
+### Step 4: Click Deploy 🚀
+- Frontend assets will be compiled to `frontend/dist`.
+- Serverless Python functions will be deployed at `/api/*` via `api/index.py`.
+- SQLite database is automatically copied to writable `/tmp/bis_saathi.db` on serverless cold starts.
+
+---
+
 ## ⏱️ 3-Minute Golden Demo Script (§20)
 
 | Time | Action | What to Demonstrate |
@@ -94,3 +126,4 @@ python -m backend.tests.test_api_endpoints
 | **2:00–2:25** | **Multilingual + Memory** | Switch language to **हिन्दी**. Ask a pronoun follow-up: *"Where can I test it in Mumbai?"*. Show active-topic memory retaining `IS 17803:2022` and returning Western Regional Lab Mumbai. |
 | **2:25–2:45** | **Scope Honesty** | Ask an out-of-scope question (e.g. *"Tell me a movie review"*). Show polite, clear scope boundary rejection. |
 | **2:45–3:00** | **Closing** | Emphasize: *"The LLM is the language interface, not the system of record. Every fact is grounded in verified BIS databases."* |
+

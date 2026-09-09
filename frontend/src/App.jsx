@@ -23,6 +23,7 @@ import DirectoryBrowser from './components/DirectoryBrowser';
 import SourceInspectorModal from './components/SourceInspectorModal';
 import VoiceModal from './components/VoiceModal';
 import { SUPPORTED_LANGUAGES, getTranslation } from './i18n/translations';
+import { API_BASE_URL } from './api/config';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'journey', 'verify', 'labs', 'directory'
@@ -41,7 +42,7 @@ export default function App() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/health');
+        const res = await fetch(`${API_BASE_URL}/api/health`);
         if (res.ok) setApiStatus('online');
         else setApiStatus('offline');
       } catch (e) {

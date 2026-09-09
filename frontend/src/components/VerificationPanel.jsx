@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldCheck, ShieldAlert, Search, Award, CheckCircle, AlertTriangle, Building, Calendar, Info } from 'lucide-react';
+import { API_BASE_URL } from '../api/config';
 
 export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) {
   const [code, setCode] = useState('');
@@ -32,7 +33,7 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
     setResult(null);
 
     try {
-      const res = await fetch('http://localhost:8000/api/verify', {
+      const res = await fetch(`${API_BASE_URL}/api/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: targetCode })
