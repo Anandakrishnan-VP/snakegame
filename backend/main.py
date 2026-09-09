@@ -27,6 +27,7 @@ from backend.services.module4_verification import verify_code
 from backend.services.module5_labs import find_testing_labs
 from backend.services.compliance_chain import run_compliance_chain
 from backend.services.llm_groq import synthesize_with_groq, deterministic_synthesis
+from backend.services.guardrails import check_pre_retrieval_guardrails, validate_post_llm_grounding
 
 app = FastAPI(
     title="BIS Saathi API",
@@ -132,6 +133,15 @@ def api_chat(req: ChatRequest):
 
     # Step 2: Language Resolution
     resolved_lang = resolve_language(raw_query, explicit_lang=req.language)
+
+    # Guardrail Layer 1: Adversarial, Jailbreak, & Out-of-Domain Refusal Shield
+    is_safe, refusal_response = check_pre_retrieval_guardrails(raw_query, language=resolved_lang)
+    if not is_safe:
+        refusal_response["session_id"] = session_id
+        refusal_response["resolved_language"] = resolved_lang
+        refusal_response["active_topic"] = active_topic
+        refusal_response["from_cache"] = False
+        return refusal_response
 
     # Step 3: Cache Check (Language-Aware Composite Key)
     cached_result, cached_active_topic = check_cache(raw_query, resolved_lang) or (None, None)
@@ -249,6 +259,9 @@ def api_chat(req: ChatRequest):
 
     # Step 8: Synthesis via Groq (with deterministic fallback)
     response_data = synthesize_with_groq(context_payload, raw_query, target_lang=resolved_lang)
+
+    # Guardrail Layer 3: Post-LLM Grounding & Hallucination Interceptor
+    response_data = validate_post_llm_grounding(response_data, language=resolved_lang)
 
     # Attach metadata
     response_data["session_id"] = session_id

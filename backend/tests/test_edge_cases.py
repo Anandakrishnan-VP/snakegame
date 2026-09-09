@@ -42,17 +42,19 @@ def test_3_unrecognized_product_attribute():
     print("[PASS] Edge Case 3: Unrecognized product attribute handles gracefully")
 
 def test_4_pronoun_followup_active_topic():
-    # Session 1: identify standard
-    session = get_or_create_session("sess-test-4")
+    import uuid
+    sess_id = f"sess-test-4-{uuid.uuid4()}"
+    # Fresh session: identify standard
+    session = get_or_create_session(sess_id)
     assert session["active_topic"] is None
     
     # User asks about water bottle
     chain = run_compliance_chain("stainless steel water bottle for kids")
     is_code = chain["standard"]["is_code"] # IS 17803:2022
-    update_session("sess-test-4", active_topic=is_code)
+    update_session(sess_id, active_topic=is_code)
     
     # Followup with pronoun: "Where can I test it in Mumbai?"
-    session_after = get_or_create_session("sess-test-4")
+    session_after = get_or_create_session(sess_id)
     assert session_after["active_topic"] == "IS 17803:2022"
     
     augmented_query = f"{session_after['active_topic']} Where can I test it in Mumbai?"
@@ -60,8 +62,10 @@ def test_4_pronoun_followup_active_topic():
     print("[PASS] Edge Case 4: Pronoun follow-up uses active-topic memory")
 
 def test_5_cache_hit_updates_active_topic():
+    import uuid
+    sess_id = f"sess-cache-test-5-{uuid.uuid4()}"
     # Write to cache
-    query = "stainless steel bottle"
+    query = f"stainless steel bottle {uuid.uuid4()}"
     lang = "en"
     mock_resp = {
         "answer": "Use IS 17803:2022.",
@@ -72,7 +76,7 @@ def test_5_cache_hit_updates_active_topic():
     write_cache(query, lang, mock_resp, active_topic="IS 17803:2022")
     
     # Fresh session
-    session = get_or_create_session("sess-cache-test-5")
+    session = get_or_create_session(sess_id)
     assert session["active_topic"] is None
     
     # Query hits cache
@@ -81,10 +85,10 @@ def test_5_cache_hit_updates_active_topic():
     assert cached_topic == "IS 17803:2022"
     
     # Crucial rule: update session state on cache hit
-    update_session("sess-cache-test-5", active_topic=cached_topic)
+    update_session(sess_id, active_topic=cached_topic)
     
     # Verify session now has the active topic
-    updated_sess = get_or_create_session("sess-cache-test-5")
+    updated_sess = get_or_create_session(sess_id)
     assert updated_sess["active_topic"] == "IS 17803:2022", "Cache hit must update active topic"
     print("[PASS] Edge Case 5: Cache hit updates active topic for subsequent follow-up")
 

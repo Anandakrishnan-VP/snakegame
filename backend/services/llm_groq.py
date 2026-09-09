@@ -19,7 +19,7 @@ def synthesize_with_groq(context_payload: Dict[str, Any], user_query: str, targe
     Calls Groq API (llama-3.3-70b-versatile) to synthesize the conversational response
     strictly grounded in the provided context_payload. Falls back to rule-based synthesis if key is missing or API errors.
     """
-    if not GROQ_API_KEY or GROQ_API_KEY.strip() == "":
+    if not GROQ_API_KEY or GROQ_API_KEY.strip() == "" or context_payload.get("out_of_scope") or context_payload.get("status") == "not determined":
         return deterministic_synthesis(context_payload, user_query, target_lang)
 
     try:
@@ -29,18 +29,19 @@ def synthesize_with_groq(context_payload: Dict[str, Any], user_query: str, targe
         evidence = context_payload.get("evidence_tag", {})
         persona = context_payload.get("persona", "general")
 
-        system_prompt = f"""You are BIS Saathi, an expert AI assistant for the Bureau of Indian Standards (BIS).
-Your goal is to provide accurate, grounded, and source-backed guidance on Indian Standards, certification schemes, testing laboratories, and consumer affairs.
+        system_prompt = f"""You are BIS Saathi, an official AI assistant for the Bureau of Indian Standards (BIS).
+Your goal is to provide accurate, grounded, and source-backed guidance strictly on Indian Standards, certification schemes, testing laboratories, and consumer affairs.
 
-CRITICAL RULES:
-1. You are strictly an explanation interface. All facts, standard codes, clauses, and laboratory names are retrieved from the official database provided below. Do not invent or assume any facts outside the context.
-2. Structure your reply strictly in the 4-Part Answer Pattern:
-   - answer: 1-2 plain-language sentences directly answering the user.
+CRITICAL GUARDRAIL RULES:
+1. STRICT GROUNDING: You are strictly an explanation interface. All facts, standard codes, clauses, and laboratory names MUST come directly from the official database context provided below. Do not invent, assume, or fabricate any facts outside the context.
+2. REFUSAL MANDATE: If the user asks about anything not contained in the retrieved context (e.g., non-BIS topics, financial advice, coding, general trivia, unverified products), you MUST explicitly state that no official BIS record was found and politely decline.
+3. Structure your reply strictly in the 4-Part Answer Pattern:
+   - answer: 1-2 plain-language sentences directly answering the user based only on the context.
    - what_it_means: Simple translation of the standard or regulatory requirement for an MSME, startup, or consumer.
    - next_action: One concrete, actionable step the user should take right now.
-3. Language constraint: Respond in {'Hindi (Devanagari script)' if target_lang == 'hi' else 'English'}.
+4. Language constraint: Respond in {'Hindi (Devanagari script)' if target_lang == 'hi' else 'English'}.
    PRESERVE all IS codes (e.g., 'IS 9873 (Part 1):2019'), clause numbers, HUIDs, licence numbers, and units without translating or altering them.
-4. Output MUST be valid JSON conforming to:
+5. Output MUST be valid JSON conforming to:
 {{
   "answer": "...",
   "what_it_means": "...",
