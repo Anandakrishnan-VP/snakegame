@@ -61,7 +61,7 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
         }}>
           <BookOpen size={16} /> {t('directory_title')}
         </div>
-        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: '#fff' }}>
+        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
           {t('directory_title')}
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
@@ -81,11 +81,12 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
               width: '100%',
               padding: '12px 16px',
               backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--border-strong)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.95rem',
-              outline: 'none'
+              outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
           />
         </div>
@@ -98,15 +99,16 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
               width: '100%',
               padding: '12px 14px',
               backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--border-strong)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.9rem',
-              outline: 'none'
+              outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
           >
             {divisions.map((d) => (
-              <option key={d} value={d} style={{ background: '#0b0f19' }}>{d}</option>
+              <option key={d} value={d} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{d}</option>
             ))}
           </select>
         </div>
@@ -122,7 +124,7 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
                   fontFamily: 'JetBrains Mono',
                   fontWeight: 700,
                   fontSize: '1.1rem',
-                  color: '#38bdf8'
+                  color: 'var(--accent-blue)'
                 }}>
                   {s.is_code}
                 </span>
@@ -137,7 +139,7 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
                 </span>
               </div>
 
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#fff', lineHeight: 1.4 }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.4 }}>
                 {s.title}
               </h4>
 
@@ -148,11 +150,11 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
               {s.qco_reference && (
                 <div style={{
                   padding: '8px 12px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  borderLeft: '3px solid #38bdf8',
+                  backgroundColor: 'var(--bg-surface)',
+                  borderLeft: '3px solid var(--accent-blue)',
                   borderRadius: '4px',
                   fontSize: '0.8rem',
-                  color: '#cbd5e1',
+                  color: 'var(--text-secondary)',
                   marginBottom: '12px'
                 }}>
                   <strong>QCO:</strong> {s.qco_reference}
@@ -166,9 +168,9 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
                     <span key={idx} style={{
                       fontSize: '0.72rem',
                       padding: '2px 8px',
-                      background: 'rgba(255, 255, 255, 0.05)',
+                      background: 'var(--bg-surface)',
                       borderRadius: '4px',
-                      color: 'var(--text-muted)'
+                      color: 'var(--text-secondary)'
                     }}>
                       {syn.trim()}
                     </span>

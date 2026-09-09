@@ -2,6 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, 
   Mic, 
+  Plus,
+  Camera,
+  Upload,
+  X,
+  Image as ImageIcon,
   ShieldCheck, 
   ArrowRight, 
   ExternalLink, 
@@ -20,6 +25,7 @@ import {
 } from 'lucide-react';
 import { SUPPORTED_LANGUAGES } from '../i18n/translations';
 import { API_BASE_URL } from '../api/config';
+import CameraModal from './CameraModal';
 
 export default function ChatView({
   onInspectEvidence,
@@ -93,7 +99,40 @@ export default function ChatView({
     }
   });
 
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [attachedImage, setAttachedImage] = useState(null);
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState(null);
+  const fileInputRef = useRef(null);
+  const plusMenuRef = useRef(null);
+
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (plusMenuRef.current && !plusMenuRef.current.contains(e.target)) {
+        setIsPlusMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (JPEG, PNG, WEBP).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setAttachedImage(ev.target.result);
+      setIsPlusMenuOpen(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const msmePrompts = [
     { label: 'Bottle Manufacturing', query: 'I am manufacturing stainless steel vacuum water bottles for kids. What are the rules?' },
@@ -174,17 +213,25 @@ export default function ChatView({
   }, [initialQuery]);
 
   const sendMessage = async (queryText) => {
-    const textToSend = queryText || inputQuery;
-    if (!textToSend.trim() || loading) return;
+    const rawText = queryText || inputQuery;
+    const hasImage = Boolean(attachedImage);
+
+    if (!rawText.trim() && !hasImage) return;
+    if (loading) return;
+
+    const imageToSend = attachedImage;
+    const textToSend = rawText.trim() || (hasImage ? "Please identify what product is shown in this image, check the applicable Indian Standard (IS code), inspect any visible or missing ISI marks/CM/L licence numbers, and provide compliance details." : "");
 
     const userMsg = {
       id: 'user-' + Date.now(),
       sender: 'user',
-      text: textToSend
+      text: textToSend,
+      image: imageToSend || null
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInputQuery('');
+    setAttachedImage(null);
     setLoading(true);
 
     try {
@@ -193,6 +240,7 @@ export default function ChatView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: textToSend,
+          image_base64: imageToSend || null,
           session_id: sessionId,
           persona: persona,
           language: currentLang
@@ -259,7 +307,8 @@ export default function ChatView({
         background: 'var(--bg-glass)',
         borderBottom: '1px solid var(--border-subtle)',
         borderRadius: '12px 12px 0 0',
-        backdropFilter: 'blur(12px)'
+        backdropFilter: 'blur(12px)',
+        boxShadow: 'var(--shadow-card)'
       }}>
         {/* Active Topic Tag */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -270,10 +319,10 @@ export default function ChatView({
               alignItems: 'center',
               gap: '6px',
               padding: '3px 10px',
-              background: 'rgba(56, 189, 248, 0.15)',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              background: 'var(--accent-blue-glow)',
+              border: '1px solid var(--accent-blue)',
               borderRadius: '9999px',
-              color: '#38bdf8',
+              color: 'var(--accent-blue)',
               fontSize: '0.8rem',
               fontWeight: 700,
               fontFamily: 'JetBrains Mono'
@@ -290,7 +339,7 @@ export default function ChatView({
           {/* Persona Toggle */}
           <div style={{
             display: 'inline-flex',
-            background: 'rgba(0, 0, 0, 0.3)',
+            background: 'var(--bg-surface)',
             borderRadius: '8px',
             padding: '2px',
             border: '1px solid var(--border-subtle)'
@@ -305,10 +354,11 @@ export default function ChatView({
                 borderRadius: '6px',
                 border: 'none',
                 background: persona === 'msme' ? 'var(--accent-saffron)' : 'transparent',
-                color: persona === 'msme' ? '#fff' : 'var(--text-secondary)',
+                color: persona === 'msme' ? '#ffffff' : 'var(--text-secondary)',
                 fontSize: '0.78rem',
                 fontWeight: 600,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
               }}
             >
               <Building2 size={13} /> {t('persona_msme')}
@@ -323,10 +373,11 @@ export default function ChatView({
                 borderRadius: '6px',
                 border: 'none',
                 background: persona === 'consumer' ? 'var(--accent-saffron)' : 'transparent',
-                color: persona === 'consumer' ? '#fff' : 'var(--text-secondary)',
+                color: persona === 'consumer' ? '#ffffff' : 'var(--text-secondary)',
                 fontSize: '0.78rem',
                 fontWeight: 600,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
               }}
             >
               <Users size={13} /> {t('persona_consumer')}
@@ -334,24 +385,32 @@ export default function ChatView({
           </div>
 
           {/* Language Selector in Chat Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Globe size={14} color="var(--accent-saffron)" />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'var(--bg-surface)',
+            padding: '2px 8px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-subtle)'
+          }}>
+            <Globe size={14} color="var(--accent-aqua)" />
             <select
               value={currentLang}
               onChange={(e) => setCurrentLang && setCurrentLang(e.target.value)}
               style={{
-                padding: '4px 8px',
+                padding: '3px 4px',
                 borderRadius: '6px',
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid var(--border-subtle)',
-                color: '#fff',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-primary)',
                 fontSize: '0.78rem',
                 outline: 'none',
                 cursor: 'pointer'
               }}
             >
               {SUPPORTED_LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code} style={{ background: '#0b0f19', color: '#fff' }}>
+                <option key={l.code} value={l.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                   {l.native} ({l.label})
                 </option>
               ))}
@@ -368,23 +427,13 @@ export default function ChatView({
               gap: '5px',
               padding: '4px 10px',
               borderRadius: '6px',
-              background: 'rgba(255, 255, 255, 0.06)',
+              background: 'var(--btn-secondary-bg)',
               border: '1px solid var(--border-subtle)',
-              color: 'var(--text-muted)',
+              color: 'var(--text-secondary)',
               fontSize: '0.78rem',
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#fff';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-muted)';
-              e.currentTarget.style.borderColor = 'var(--border-subtle)';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
             }}
           >
             <RotateCcw size={13} /> New Chat
@@ -404,14 +453,48 @@ export default function ChatView({
               <div style={{
                 maxWidth: '75%',
                 padding: '14px 18px',
-                background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(249, 115, 22, 0.15) 100%)',
-                border: '1px solid rgba(249, 115, 22, 0.3)',
+                background: 'linear-gradient(135deg, #111315 0%, #1e2629 100%)',
+                boxShadow: '0 4px 14px rgba(17, 19, 21, 0.25)',
+                border: '1px solid rgba(207, 220, 220, 0.25)',
                 borderRadius: '16px 16px 4px 16px',
-                color: '#fff',
+                color: '#ffffff',
                 fontSize: '0.96rem',
-                lineHeight: 1.5
+                lineHeight: 1.5,
+                fontWeight: 500
               }}>
-                {msg.text}
+                {msg.image && (
+                  <div style={{ marginBottom: msg.text ? '10px' : '0' }}>
+                    <img
+                      src={msg.image}
+                      alt="Uploaded item"
+                      onClick={() => setZoomedImage(msg.image)}
+                      title="Click to enlarge photo"
+                      style={{
+                        maxWidth: '240px',
+                        maxHeight: '200px',
+                        borderRadius: '10px',
+                        objectFit: 'cover',
+                        display: 'block',
+                        cursor: 'zoom-in',
+                        border: '1px solid rgba(255, 255, 255, 0.25)',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.35)'
+                      }}
+                    />
+                    <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{
+                        fontSize: '0.72rem',
+                        color: '#99f6e4',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: 600
+                      }}>
+                        <Sparkles size={11} /> {t('vlm_badge') || 'Vision AI Inspected'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {msg.text && <div>{msg.text}</div>}
               </div>
             ) : (
               /* Assistant 4-Part Answer Card */
@@ -419,14 +502,16 @@ export default function ChatView({
                 maxWidth: '88%',
                 borderRadius: '16px',
                 overflow: 'hidden',
-                boxShadow: 'var(--shadow-card)'
+                background: 'var(--bg-card)',
+                boxShadow: 'var(--shadow-card)',
+                border: '1px solid var(--border-subtle)'
               }}>
                 {/* Persona Context Banner */}
                 <div style={{
                   padding: '9px 20px',
                   background: msg.persona === 'consumer'
-                    ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.02) 100%)'
-                    : 'linear-gradient(90deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.02) 100%)',
+                    ? 'rgba(5, 150, 105, 0.08)'
+                    : 'rgba(234, 88, 12, 0.08)',
                   borderBottom: '1px solid var(--border-subtle)',
                   display: 'flex',
                   alignItems: 'center',
@@ -444,8 +529,8 @@ export default function ChatView({
                         borderRadius: '9999px',
                         fontSize: '0.74rem',
                         fontWeight: 700,
-                        color: '#34d399',
-                        background: 'rgba(16, 185, 129, 0.18)',
+                        color: '#059669',
+                        background: 'rgba(16, 185, 129, 0.15)',
                         border: '1px solid rgba(16, 185, 129, 0.35)'
                       }}>
                         <Users size={12} /> Consumer Safety & Buying Advisory
@@ -460,8 +545,8 @@ export default function ChatView({
                         fontSize: '0.74rem',
                         fontWeight: 700,
                         color: 'var(--accent-saffron)',
-                        background: 'rgba(249, 115, 22, 0.18)',
-                        border: '1px solid rgba(249, 115, 22, 0.35)'
+                        background: 'var(--accent-saffron-glow)',
+                        border: '1px solid var(--border-active)'
                       }}>
                         <Building2 size={12} /> MSME Compliance & Licensing Advisory
                       </span>
@@ -475,17 +560,17 @@ export default function ChatView({
                 </div>
 
                 {/* 1. Direct Answer */}
-                <div style={{ padding: '18px 20px', background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '18px 20px', background: 'transparent', borderBottom: '1px solid var(--border-subtle)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                     <div style={{
                       width: '24px',
                       height: '24px',
                       borderRadius: '50%',
-                      background: msg.persona === 'consumer' ? '#10b981' : 'var(--accent-saffron)',
+                      background: msg.persona === 'consumer' ? 'var(--accent-emerald)' : 'var(--accent-saffron)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#fff',
+                      color: '#ffffff',
                       fontSize: '0.75rem',
                       fontWeight: 700
                     }}>
@@ -494,24 +579,24 @@ export default function ChatView({
                     <span style={{
                       fontSize: '0.82rem',
                       fontWeight: 700,
-                      color: msg.persona === 'consumer' ? '#34d399' : 'var(--accent-saffron)',
+                      color: msg.persona === 'consumer' ? 'var(--accent-emerald)' : 'var(--accent-saffron)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em'
                     }}>
                       {msg.persona === 'consumer' ? 'Product Safety & Quality Summary' : 'Industrial Compliance Answer'}
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.98rem', color: '#fff', lineHeight: 1.6, fontWeight: 500 }}>
+                  <p style={{ margin: 0, fontSize: '0.98rem', color: 'var(--text-primary)', lineHeight: 1.6, fontWeight: 500 }}>
                     {msg.answer}
                   </p>
                 </div>
 
                 {/* 2. What this means */}
                 {msg.what_it_means && (
-                  <div style={{ padding: '14px 20px', background: 'rgba(0, 0, 0, 0.2)', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ padding: '14px 20px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)' }}>
                     <span style={{
                       fontSize: '0.78rem',
-                      color: msg.persona === 'consumer' ? '#a7f3d0' : 'var(--text-muted)',
+                      color: msg.persona === 'consumer' ? 'var(--accent-emerald)' : 'var(--accent-saffron)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
                       fontWeight: 600,
@@ -520,7 +605,7 @@ export default function ChatView({
                     }}>
                       {msg.persona === 'consumer' ? '🔍 What to Check Before Buying (Packaging & Safety)' : '🏭 Factory & Scheme Implications (MSME & Audit)'}
                     </span>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       {msg.what_it_means}
                     </p>
                   </div>
@@ -530,14 +615,14 @@ export default function ChatView({
                 {msg.next_action && (
                   <div style={{
                     padding: '14px 20px',
-                    background: msg.persona === 'consumer' ? 'rgba(16, 185, 129, 0.04)' : 'rgba(56, 189, 248, 0.04)',
+                    background: msg.persona === 'consumer' ? 'rgba(5, 150, 105, 0.04)' : 'rgba(2, 132, 199, 0.04)',
                     borderBottom: '1px solid var(--border-subtle)'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <CornerDownRight size={14} color={msg.persona === 'consumer' ? '#34d399' : '#38bdf8'} />
+                      <CornerDownRight size={14} color={msg.persona === 'consumer' ? '#059669' : '#0284c7'} />
                       <span style={{
                         fontSize: '0.78rem',
-                        color: msg.persona === 'consumer' ? '#34d399' : '#38bdf8',
+                        color: msg.persona === 'consumer' ? '#059669' : '#0284c7',
                         textTransform: 'uppercase',
                         letterSpacing: '0.04em',
                         fontWeight: 600
@@ -545,7 +630,7 @@ export default function ChatView({
                         {msg.persona === 'consumer' ? 'Citizen Action: Verify on BIS Care App / Grievance' : 'Manufacturer Roadmap: Form V & Testing Action'}
                       </span>
                     </div>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, fontWeight: 500 }}>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 500 }}>
                       {msg.next_action}
                     </p>
 
@@ -554,9 +639,9 @@ export default function ChatView({
                         <button
                           onClick={() => onStartJourney(msg.active_topic || msg.evidence_tag.reference)}
                           style={{
-                            background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(234, 88, 12, 0.3) 100%)',
-                            border: '1px solid var(--accent-saffron)',
-                            color: '#fff',
+                            background: 'var(--accent-saffron)',
+                            border: 'none',
+                            color: '#ffffff',
                             borderRadius: '6px',
                             padding: '6px 14px',
                             fontSize: '0.82rem',
@@ -566,7 +651,7 @@ export default function ChatView({
                             alignItems: 'center',
                             gap: '6px',
                             transition: 'all 0.2s ease',
-                            boxShadow: '0 2px 10px rgba(249, 115, 22, 0.2)'
+                            boxShadow: '0 2px 10px var(--accent-saffron-glow)'
                           }}
                         >
                           <Award size={14} /> Start Certification Journey Wizard <ArrowRight size={12} />
@@ -580,7 +665,7 @@ export default function ChatView({
                 {msg.evidence_tag && (
                   <div style={{
                     padding: '12px 20px',
-                    background: 'rgba(0, 0, 0, 0.35)',
+                    background: 'var(--bg-surface)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -592,7 +677,7 @@ export default function ChatView({
                       <span style={{
                         fontSize: '0.8rem',
                         fontWeight: 600,
-                        color: '#38bdf8',
+                        color: 'var(--accent-blue-deep)',
                         fontFamily: 'JetBrains Mono'
                       }}>
                         {msg.evidence_tag.reference || 'BIS Database'}
@@ -614,10 +699,10 @@ export default function ChatView({
                           target="_blank"
                           rel="noreferrer"
                           style={{
-                            background: 'rgba(56, 189, 248, 0.12)',
-                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            background: 'var(--accent-blue-glow)',
+                            border: '1px solid var(--accent-blue)',
                             borderRadius: '6px',
-                            color: '#38bdf8',
+                            color: 'var(--accent-blue)',
                             padding: '4px 10px',
                             fontSize: '0.78rem',
                             fontWeight: 600,
@@ -635,10 +720,10 @@ export default function ChatView({
                       <button
                         onClick={() => onInspectEvidence(msg.evidence_tag)}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.06)',
+                          background: 'var(--bg-card)',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '6px',
-                          color: 'var(--accent-saffron-light)',
+                          color: 'var(--accent-aqua)',
                           padding: '4px 12px',
                           fontSize: '0.78rem',
                           fontWeight: 600,
@@ -660,8 +745,8 @@ export default function ChatView({
         ))}
 
         {loading && (
-          <div style={{ display: 'flex', gap: '8px', padding: '12px 18px', background: 'var(--bg-glass)', borderRadius: '12px', width: 'fit-content' }}>
-            <Sparkles size={18} color="var(--accent-saffron)" className="animate-spin" />
+          <div style={{ display: 'flex', gap: '8px', padding: '12px 18px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '12px', width: 'fit-content' }}>
+            <Sparkles size={18} color="var(--accent-aqua)" className="animate-spin" />
             <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>Consulting BIS knowledge base & compliance chain...</span>
           </div>
         )}
@@ -670,7 +755,7 @@ export default function ChatView({
       </div>
 
       {/* Quick Prompt Chips */}
-      <div style={{ padding: '8px 18px', display: 'flex', gap: '8px', overflowX: 'auto', background: 'rgba(0, 0, 0, 0.2)' }}>
+      <div style={{ padding: '8px 18px', display: 'flex', gap: '8px', overflowX: 'auto', background: 'var(--bg-surface)', borderTop: '1px solid var(--border-subtle)' }}>
         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', alignSelf: 'center', whiteSpace: 'nowrap' }}>{t('quick_prompt_title')}</span>
         {quickPrompts.map((qp, idx) => (
           <button
@@ -679,13 +764,14 @@ export default function ChatView({
             style={{
               whiteSpace: 'nowrap',
               fontSize: '0.78rem',
-              padding: '4px 12px',
+              padding: '5px 12px',
               borderRadius: '9999px',
-              background: 'rgba(255, 255, 255, 0.05)',
+              background: 'var(--bg-card)',
               border: '1px solid var(--border-subtle)',
               color: 'var(--text-secondary)',
               cursor: 'pointer',
-              transition: 'all 0.15s ease'
+              transition: 'all 0.15s ease',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             }}
           >
             {qp.label}
@@ -695,7 +781,80 @@ export default function ChatView({
 
       {/* Input Bar */}
       <div style={{ padding: '16px', background: 'var(--bg-glass)', borderTop: '1px solid var(--border-subtle)', borderRadius: '0 0 12px 12px' }}>
+        {/* Attached Image Preview Strip */}
+        {attachedImage && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '12px',
+            padding: '8px 12px',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            border: '1px solid var(--border-subtle)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            width: 'fit-content'
+          }}>
+            <div style={{ position: 'relative' }}>
+              <img
+                src={attachedImage}
+                alt="Selected preview"
+                style={{
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '8px',
+                  objectFit: 'cover',
+                  border: '1px solid var(--border-subtle)',
+                  display: 'block'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setAttachedImage(null)}
+                title={t('vlm_remove') || 'Remove photo'}
+                style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-6px',
+                  background: 'var(--cod-gray)',
+                  color: '#ffffff',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  padding: 0,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {t('vlm_preview_title') || 'Attached for Quality & ISI/Hallmark Inspection'}
+              </span>
+              <span style={{ fontSize: '0.74rem', color: 'var(--accent-aqua)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Sparkles size={11} /> Vision AI ready • Press send or type specific questions
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileUpload}
+        />
+
         <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {/* Voice Button */}
           <button
             type="button"
             onClick={onOpenVoice}
@@ -703,44 +862,187 @@ export default function ChatView({
             style={{
               padding: '12px',
               borderRadius: '10px',
-              background: 'rgba(255, 255, 255, 0.06)',
+              background: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
-              color: 'var(--accent-saffron)',
+              color: 'var(--accent-aqua)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              transition: 'all 0.15s ease'
             }}
           >
             <Mic size={20} />
           </button>
+
+          {/* + Button for Camera and Files */}
+          <div style={{ position: 'relative' }} ref={plusMenuRef}>
+            <button
+              type="button"
+              id="btn-vlm-plus"
+              onClick={() => setIsPlusMenuOpen((prev) => !prev)}
+              title={t('btn_attach') || 'Attach Photo / Document'}
+              style={{
+                padding: '12px',
+                borderRadius: '10px',
+                background: isPlusMenuOpen || attachedImage ? 'var(--accent-aqua)' : 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                color: isPlusMenuOpen || attachedImage ? '#ffffff' : 'var(--accent-aqua)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Plus size={20} />
+            </button>
+
+            {/* Popover Menu with Camera and Add Files */}
+            {isPlusMenuOpen && (
+              <div style={{
+                position: 'absolute',
+                bottom: '125%',
+                left: 0,
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '12px',
+                boxShadow: '0 12px 28px rgba(0, 0, 0, 0.25)',
+                padding: '6px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                minWidth: '230px',
+                zIndex: 60,
+                animation: 'fadeIn 0.15s ease-out'
+              }}>
+                <button
+                  type="button"
+                  id="btn-vlm-camera"
+                  onClick={() => {
+                    setIsPlusMenuOpen(false);
+                    setIsCameraOpen(true);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.88rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-surface)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: 'rgba(13, 148, 136, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent-aqua)'
+                  }}>
+                    <Camera size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{t('btn_camera') || 'Camera'}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Take live photo</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  id="btn-vlm-upload"
+                  onClick={() => {
+                    setIsPlusMenuOpen(false);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.click();
+                    }
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.88rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-surface)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: 'rgba(13, 148, 136, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent-aqua)'
+                  }}>
+                    <Upload size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{t('btn_upload') || 'Add Files'}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Upload from device</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
 
           <input
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
             placeholder={
-              persona === 'consumer'
-                ? t('chat_placeholder_consumer')
-                : t('chat_placeholder_msme')
+              attachedImage
+                ? "Optional: ask specific question or press send to analyze..."
+                : persona === 'consumer'
+                  ? t('chat_placeholder_consumer')
+                  : t('chat_placeholder_msme')
             }
             style={{
               flex: 1,
               padding: '14px 18px',
               backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--border-strong)',
               borderRadius: '10px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.95rem',
-              outline: 'none'
+              outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
           />
 
           <button
             type="submit"
-            disabled={!inputQuery.trim() || loading}
+            disabled={(!inputQuery.trim() && !attachedImage) || loading}
             className="btn-primary"
-            style={{ padding: '14px 22px', borderRadius: '10px', opacity: !inputQuery.trim() || loading ? 0.6 : 1 }}
+            style={{
+              padding: '14px 22px',
+              borderRadius: '10px',
+              opacity: (!inputQuery.trim() && !attachedImage) || loading ? 0.6 : 1,
+              cursor: (!inputQuery.trim() && !attachedImage) || loading ? 'not-allowed' : 'pointer'
+            }}
           >
             <Send size={18} />
           </button>
@@ -750,6 +1052,78 @@ export default function ChatView({
           {t('chat_disclaimer')}
         </p>
       </div>
+
+      {/* Live Camera Modal */}
+      <CameraModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={(photoDataUrl) => setAttachedImage(photoDataUrl)}
+        onCapturePhoto={(photoDataUrl) => setAttachedImage(photoDataUrl)}
+        onSwitchToFileUpload={() => {
+          if (fileInputRef.current) {
+            fileInputRef.current.click();
+          }
+        }}
+      />
+
+      {/* Full Size Image Lightbox */}
+      {zoomedImage && (
+        <div
+          onClick={() => setZoomedImage(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '24px',
+            backdropFilter: 'blur(4px)',
+            cursor: 'zoom-out'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}
+          >
+            <img
+              src={zoomedImage}
+              alt="Enlarged inspection"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '85vh',
+                borderRadius: '12px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+                objectFit: 'contain',
+                border: '1px solid rgba(255,255,255,0.2)'
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setZoomedImage(null)}
+              style={{
+                position: 'absolute',
+                top: '-12px',
+                right: '-12px',
+                background: 'var(--cod-gray)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.4)'
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

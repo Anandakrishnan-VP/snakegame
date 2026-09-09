@@ -28,27 +28,27 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: '#0d1322',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-hover)',
           overflow: 'hidden'
         }}
       >
         {/* Header */}
         <div style={{
           padding: '20px 24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'linear-gradient(90deg, rgba(249, 115, 22, 0.1) 0%, transparent 100%)'
+          background: 'linear-gradient(90deg, var(--accent-saffron-glow) 0%, transparent 100%)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              background: 'rgba(249, 115, 22, 0.15)',
+              background: 'var(--accent-saffron-glow)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -57,7 +57,7 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
               <BookOpen size={22} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#fff' }}>Official Source & Clause Inspector</h3>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)' }}>Official Source & Clause Inspector</h3>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                 Authorized clause summary & statutory gazette records
               </p>
@@ -90,13 +90,13 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
             flexWrap: 'wrap',
             gap: '10px',
             padding: '12px 16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            backgroundColor: 'var(--bg-surface)',
             borderRadius: '10px',
             border: '1px solid var(--border-subtle)'
           }}>
             <div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Standard Reference</span>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#38bdf8', fontFamily: 'JetBrains Mono' }}>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--accent-blue)', fontFamily: 'JetBrains Mono' }}>
                 {evidence.reference || 'Indian Standard Record'}
               </div>
             </div>
@@ -120,25 +120,25 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
           {/* Clause Meta */}
           {evidence.clause_number && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-              <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ padding: '12px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Clause</span>
-                <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#fff' }}>{evidence.clause_number}</p>
+                <p style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--text-primary)' }}>{evidence.clause_number}</p>
               </div>
               {evidence.sub_clause && (
-                <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '12px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sub-clause</span>
-                  <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#fff' }}>{evidence.sub_clause}</p>
+                  <p style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--text-primary)' }}>{evidence.sub_clause}</p>
                 </div>
               )}
               {evidence.page && (
-                <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '12px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Publication Page</span>
-                  <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#fff' }}>Page {evidence.page}</p>
+                  <p style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--text-primary)' }}>Page {evidence.page}</p>
                 </div>
               )}
-              <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ padding: '12px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Source Category</span>
-                <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#fff', textTransform: 'capitalize' }}>{evidence.source_type || 'Gazette / Clause'}</p>
+                <p style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{evidence.source_type || 'Gazette / Clause'}</p>
               </div>
             </div>
           )}
@@ -151,10 +151,10 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
             </div>
             <div style={{
               padding: '16px',
-              backgroundColor: 'rgba(0, 0, 0, 0.4)',
+              backgroundColor: 'var(--bg-surface)',
               borderLeft: '3px solid var(--accent-saffron)',
               borderRadius: '6px',
-              color: '#e2e8f0',
+              color: 'var(--text-primary)',
               fontSize: '0.95rem',
               lineHeight: 1.6
             }}>
@@ -169,12 +169,12 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
           {evidence.qco_reference && (
             <div style={{
               padding: '12px 16px',
-              backgroundColor: 'rgba(56, 189, 248, 0.08)',
-              border: '1px solid rgba(56, 189, 248, 0.2)',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '8px'
             }}>
-              <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 600, textTransform: 'uppercase' }}>Government QCO Notification</span>
-              <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#cbd5e1' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-blue)', fontWeight: 600, textTransform: 'uppercase' }}>Government QCO Notification</span>
+              <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                 {evidence.qco_reference}
               </p>
             </div>
@@ -184,11 +184,11 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
         {/* Footer */}
         <div style={{
           padding: '16px 24px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          borderTop: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: 'rgba(0, 0, 0, 0.2)'
+          backgroundColor: 'var(--bg-surface)'
         }}>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Source: Bureau of Indian Standards & Ministry Gazette Orders
@@ -198,7 +198,7 @@ export default function SourceInspectorModal({ isOpen, onClose, evidence }) {
               <a 
                 href={evidence.source_url} 
                 target="_blank" 
-                rel="noreferrer"
+                rel="noreferrer" 
                 className="btn-primary"
                 style={{ fontSize: '0.85rem', padding: '8px 16px', textDecoration: 'none' }}
               >

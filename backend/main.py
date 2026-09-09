@@ -4,6 +4,7 @@ Implements complete 8-step request lifecycle, compliance chain, verification, an
 """
 
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -29,6 +30,7 @@ from backend.services.multilingual import (
 )
 from backend.services.intent_router import route_intent
 from backend.services.module1_directory import search_directory, get_standard_by_code, get_flagship_chunks
+from backend.services.module2_matcher import extract_attributes
 from backend.services.module3_certification import get_certification_steps, get_scheme_overview
 from backend.services.module4_verification import verify_code
 from backend.services.module5_labs import find_testing_labs
@@ -36,6 +38,7 @@ from backend.services.compliance_chain import run_compliance_chain
 from backend.services.llm_groq import synthesize_with_groq, deterministic_synthesis
 from backend.services.guardrails import check_pre_retrieval_guardrails, validate_post_llm_grounding
 from backend.services.transcription import transcribe_audio
+from backend.services.vlm_service import analyze_image_with_vlm
 from backend.services.journey_service import start_journey, update_step_status, get_journey
 from backend.services.journey_pdf import generate_roadmap_pdf
 
@@ -121,15 +124,22 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Request/Response Schemas
 class ChatRequest(BaseModel):
-    query: str
+    query: Optional[str] = ""
     session_id: Optional[str] = None
     persona: Optional[str] = "general" # 'consumer', 'msme', 'general'
     language: Optional[str] = "auto" # 'auto', 'en', 'hi'
     city: Optional[str] = None
     state: Optional[str] = None
+    image_base64: Optional[str] = None # Multimodal VLM image
 
 class VerifyRequest(BaseModel):
     code: str
+
+class VisionAnalyzeRequest(BaseModel):
+    image_base64: str
+    query: Optional[str] = ""
+    persona: Optional[str] = "general"
+    language: Optional[str] = "auto"
 
 @app.get("/api")
 @app.get("/api/")
@@ -137,6 +147,24 @@ class VerifyRequest(BaseModel):
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "BIS Saathi API"}
+
+@app.post("/api/vision/analyze")
+def api_vision_analyze(req: VisionAnalyzeRequest):
+    """
+    Direct Vision-Language Model endpoint.
+    Visually inspects photographs for products, labels, and BIS marks.
+    """
+    lang = req.language or "en"
+    if lang == "auto" and req.query and req.query.strip():
+        lang = resolve_language(req.query, explicit_lang=req.language)
+    elif lang == "auto":
+        lang = "en"
+    return analyze_image_with_vlm(
+        image_base64=req.image_base64,
+        user_query=req.query,
+        persona=req.persona or "general",
+        target_lang=lang
+    )
 
 @app.post("/api/transcribe")
 async def api_transcribe(
@@ -198,6 +226,46 @@ def api_clause(chunk_id: str):
         raise HTTPException(status_code=404, detail="Clause chunk not found")
     return dict(row)
 
+def should_augment_with_active_topic(query: str, active_topic: Optional[str]) -> bool:
+    """
+    Determines whether a query is an anaphoric / pronoun follow-up that should be augmented
+    with the active topic. Returns False if the query contains explicit standard codes,
+    a distinct product category, or is an independent new product inquiry.
+    """
+    if not active_topic:
+        return False
+
+    lower = query.lower().strip()
+
+    # 1. If query contains an explicit Indian Standard code (e.g. "IS 14543", "IS 13428"), it's an explicit query
+    if re.search(r'\bis\s*\d+', lower):
+        return False
+
+    # 2. Check if the query matches an explicit product category
+    attrs = extract_attributes(lower)
+    cat = attrs.get("category")
+    if cat:
+        # Check if the extracted category matches the active_topic's title or synonyms
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT title, synonyms FROM standards WHERE is_code = ?", (active_topic,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            topic_str = f"{row['title']} {row['synonyms']}".lower()
+            # If the user's category (e.g. "water", "toy", "helmet") is NOT in the active topic,
+            # this is an intentional topic switch! Do NOT augment.
+            if cat not in topic_str:
+                return False
+
+    # 3. Check for pronoun or anaphoric follow-up indicators
+    followup_patterns = [
+        r'\b(it|its|this|that|these|those|the same|same standard|for it|test it|about it|get it|tested)\b',
+        r'^(where|how|what are the fees|how to test|where to test|labs? in|cost|timeline|fees|procedure|steps)',
+        r'\b(in mumbai|in delhi|in chennai|in kolkata|in bangalore|in pune|in hyderabad|in gujarat|in maharashtra)\b'
+    ]
+    return any(re.search(pat, lower) for pat in followup_patterns)
+
 @app.post("/api/chat")
 def api_chat(req: ChatRequest):
     """
@@ -212,7 +280,45 @@ def api_chat(req: ChatRequest):
     8. Groq synthesis, cache & session update
     """
     session_id = req.session_id or str(uuid.uuid4())
-    raw_query = req.query.strip()
+    raw_query = (req.query or "").strip()
+
+    # Multimodal VLM Inspection Branch
+    if req.image_base64 and req.image_base64.strip():
+        session = get_or_create_session(session_id, persona=req.persona or "general", language=req.language or "en")
+        current_persona = req.persona or session.get("persona", "general")
+        resolved_lang = resolve_language(raw_query, explicit_lang=req.language) if raw_query else (req.language or "en")
+        if resolved_lang == "auto":
+            resolved_lang = "en"
+
+        vlm_res = analyze_image_with_vlm(
+            image_base64=req.image_base64,
+            user_query=raw_query,
+            persona=current_persona,
+            target_lang=resolved_lang
+        )
+
+        detected_topic = vlm_res.get("active_topic") or session.get("active_topic")
+        turn_rec = {
+            "query": raw_query or "[Uploaded Product Image for Inspection]",
+            "intent": "VLM_IMAGE_INSPECTION",
+            "active_topic": detected_topic,
+            "language": resolved_lang
+        }
+        update_session(
+            session_id,
+            active_topic=detected_topic,
+            persona=current_persona,
+            language=resolved_lang,
+            turn_record=turn_rec,
+            increment_turn=True
+        )
+        vlm_res["session_id"] = session_id
+        vlm_res["resolved_language"] = resolved_lang
+        vlm_res["active_topic"] = detected_topic
+        vlm_res["from_cache"] = False
+        vlm_res["persona"] = current_persona
+        return vlm_res
+
     if not raw_query:
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
@@ -267,27 +373,38 @@ def api_chat(req: ChatRequest):
 
     # Step 6: Active-Topic Augmentation for pronouns / follow-ups
     augmented_query = english_query
-    if active_topic:
-        # Unconditionally prepend active topic to improve retrieval context
+    if should_augment_with_active_topic(english_query, active_topic):
         augmented_query = f"{active_topic} {english_query}"
 
     # Step 7: Modular Execution
-    resolved_standard_code = active_topic
+    resolved_standard_code = None
     context_payload = {"persona": current_persona}
 
     if intent == "OUT_OF_SCOPE":
-        context_payload = {
-            "out_of_scope": True,
-            "persona": current_persona,
-            "evidence_tag": {
-                "source_type": "faq",
-                "reference": "Scope Boundary",
-                "status": "not determined",
-                "clause_summary": "Out of scope query declined.",
-                "verbatim_excerpt": "Out of scope query declined.",
-                "source_url": "https://www.bis.gov.in"
+        if os.getenv("ALLOW_ALL_QUESTIONS", "true").lower() in ("true", "1", "yes"):
+            chain_result = run_compliance_chain(
+                query=augmented_query,
+                city=req.city,
+                state=req.state,
+                persona=current_persona
+            )
+            context_payload = chain_result
+            context_payload["persona"] = current_persona
+            if chain_result.get("standard"):
+                resolved_standard_code = chain_result["standard"]["is_code"]
+        else:
+            context_payload = {
+                "out_of_scope": True,
+                "persona": current_persona,
+                "evidence_tag": {
+                    "source_type": "faq",
+                    "reference": "Scope Boundary",
+                    "status": "not determined",
+                    "clause_summary": "Out of scope query declined.",
+                    "verbatim_excerpt": "Out of scope query declined.",
+                    "source_url": "https://www.bis.gov.in"
+                }
             }
-        }
 
     elif intent == "VERIFICATION":
         ver_result = verify_code(raw_query)
@@ -307,6 +424,7 @@ def api_chat(req: ChatRequest):
             resolved_standard_code = ver_result["is_code"]
 
     elif intent == "LAB_SEARCH":
+        resolved_standard_code = active_topic
         labs = find_testing_labs(is_code=active_topic, city=req.city, state=req.state)
         context_payload = {
             "intent": "LAB_SEARCH",
@@ -362,7 +480,6 @@ def api_chat(req: ChatRequest):
         }
 
     else:
-        # Default: PRODUCT_TO_STANDARD or STANDARD_SEARCH -> Run the Compliance Chain!
         chain_result = run_compliance_chain(
             query=augmented_query,
             city=req.city,
@@ -373,6 +490,8 @@ def api_chat(req: ChatRequest):
         context_payload["persona"] = current_persona
         if chain_result.get("standard"):
             resolved_standard_code = chain_result["standard"]["is_code"]
+        elif active_topic and should_augment_with_active_topic(english_query, active_topic):
+            resolved_standard_code = active_topic
 
     # Step 8: Synthesis via Groq (with deterministic fallback)
     response_data = synthesize_with_groq(context_payload, raw_query, target_lang=resolved_lang)
@@ -381,29 +500,30 @@ def api_chat(req: ChatRequest):
     response_data = validate_post_llm_grounding(response_data, language=resolved_lang, context_payload=context_payload)
 
     # Attach metadata
+    final_active_topic = resolved_standard_code if resolved_standard_code is not None else active_topic
     response_data["session_id"] = session_id
     response_data["intent"] = intent
     response_data["resolved_language"] = resolved_lang
-    response_data["active_topic"] = resolved_standard_code
+    response_data["active_topic"] = final_active_topic
     response_data["from_cache"] = False
 
     # Update session state and write to language-aware cache
     turn_rec = {
         "query": raw_query,
         "intent": intent,
-        "active_topic": resolved_standard_code,
+        "active_topic": final_active_topic,
         "language": resolved_lang
     }
     update_session(
         session_id,
-        active_topic=resolved_standard_code,
+        active_topic=final_active_topic,
         persona=current_persona,
         language=resolved_lang,
         turn_record=turn_rec,
         increment_turn=True
     )
     if not response_data.get("guardrail_refusal"):
-        write_cache(raw_query, resolved_lang, response_data, active_topic=resolved_standard_code, persona=current_persona)
+        write_cache(raw_query, resolved_lang, response_data, active_topic=final_active_topic, persona=current_persona)
 
     return response_data
 

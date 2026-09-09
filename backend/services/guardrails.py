@@ -6,6 +6,7 @@ Implements a 3-tier shield:
 3. Post-Retrieval Grounding Gatekeeper & Post-LLM Hallucination Validator
 """
 
+import os
 import re
 from typing import Dict, Any, Optional, Tuple
 from backend.db.database import get_db_connection
@@ -36,6 +37,8 @@ OUT_OF_DOMAIN_PATTERNS = [
     r'\b(?:prescribe\s+medicine|diagnose\s+symptoms|headache\s+treatment|dosage)\b'
 ]
 
+ALLOW_ALL_QUESTIONS = os.getenv("ALLOW_ALL_QUESTIONS", "true").lower() in ("true", "1", "yes")
+
 def check_pre_retrieval_guardrails(query: str, language: str = "en") -> Tuple[bool, Optional[Dict[str, Any]]]:
     """
     Checks user query for prompt injection or off-domain topics before retrieval or LLM execution.
@@ -43,7 +46,7 @@ def check_pre_retrieval_guardrails(query: str, language: str = "en") -> Tuple[bo
     """
     text = query.strip().lower()
 
-    # 1. Jailbreak Check
+    # 1. Jailbreak Check (Always enforced to protect security boundaries)
     for pat in JAILBREAK_PATTERNS:
         if re.search(pat, text, re.IGNORECASE):
             return False, generate_refusal_response(
@@ -51,13 +54,14 @@ def check_pre_retrieval_guardrails(query: str, language: str = "en") -> Tuple[bo
                 language=language
             )
 
-    # 2. Out-of-Domain Topic Check
-    for pat in OUT_OF_DOMAIN_PATTERNS:
-        if re.search(pat, text, re.IGNORECASE):
-            return False, generate_refusal_response(
-                reason="Query is outside the scope of Bureau of Indian Standards services.",
-                language=language
-            )
+    # 2. Out-of-Domain Topic Check (Bypassed if ALLOW_ALL_QUESTIONS is active)
+    if not ALLOW_ALL_QUESTIONS:
+        for pat in OUT_OF_DOMAIN_PATTERNS:
+            if re.search(pat, text, re.IGNORECASE):
+                return False, generate_refusal_response(
+                    reason="Query is outside the scope of Bureau of Indian Standards services.",
+                    language=language
+                )
 
     return True, None
 

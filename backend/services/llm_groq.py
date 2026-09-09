@@ -29,7 +29,11 @@ def synthesize_with_groq(context_payload: Dict[str, Any], user_query: str, targe
     strictly grounded in the provided context_payload.
     Attempts primary model, fast model, and qwen fallback before deterministic synthesis.
     """
-    if not GROQ_API_KEY or GROQ_API_KEY.strip() == "" or context_payload.get("out_of_scope") or context_payload.get("status") == "not determined":
+    allow_all = os.getenv("ALLOW_ALL_QUESTIONS", "true").lower() in ("true", "1", "yes")
+    if not GROQ_API_KEY or GROQ_API_KEY.strip() == "":
+        return deterministic_synthesis(context_payload, user_query, target_lang)
+
+    if not allow_all and (context_payload.get("out_of_scope") or context_payload.get("status") == "not determined"):
         return deterministic_synthesis(context_payload, user_query, target_lang)
 
     try:
@@ -72,14 +76,20 @@ TARGET PERSONA: MSME / MANUFACTURER / STARTUP
 - "next_action": Provide a concrete manufacturer roadmap step: submit Form V on the BIS Manak Online portal (www.manakonline.in), upload the factory test equipment list, claim MSME fee concessions, and schedule sample prototype testing at a recognized lab.
 """
 
+        rule_2 = (
+            "2. HELPFUL GUIDANCE: Answer the question clearly and helpfully. If a specific Indian Standard is in context, ground your answer in it; if not, provide accurate guidance on applicable quality and safety principles and suggest checking www.manakonline.in."
+            if allow_all else
+            "2. REFUSAL MANDATE: If the user asks about anything not contained in the retrieved context (e.g., non-BIS topics, financial advice, coding, general trivia, unverified products), you MUST explicitly state that no official BIS record was found and politely decline."
+        )
+
         system_prompt = f"""You are BIS Saathi, an official AI assistant for the Bureau of Indian Standards (BIS).
-Your goal is to provide accurate, grounded, and source-backed guidance strictly on Indian Standards, certification schemes, testing laboratories, and consumer affairs.
+Your goal is to provide accurate, grounded, and source-backed guidance on Indian Standards, certification schemes, testing laboratories, and consumer affairs.
 
 {persona_directive}
 
 CRITICAL GUARDRAIL RULES:
-1. STRICT GROUNDING: You are strictly an explanation interface. All facts, standard codes, clauses, and laboratory names MUST come directly from the official database context provided below. Do not invent, assume, or fabricate any facts outside the context.
-2. REFUSAL MANDATE: If the user asks about anything not contained in the retrieved context (e.g., non-BIS topics, financial advice, coding, general trivia, unverified products), you MUST explicitly state that no official BIS record was found and politely decline.
+1. STRICT GROUNDING: You are an explanation interface. When Indian Standards, codes, clauses, and laboratory names are in the context, preserve them accurately.
+{rule_2}
 3. Structure your reply strictly in the 4-Part Answer Pattern:
    - answer: 1-2 plain-language sentences directly answering the user based only on the context and tailored to the persona.
    - what_it_means: Clear explanation tailored to the target persona (manufacturing obligations & fee subsidies for MSME; packaging marks & health safety for Consumer).

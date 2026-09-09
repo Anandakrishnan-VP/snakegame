@@ -46,6 +46,13 @@ export const translations = {
     chat_placeholder_consumer: 'Ask about product safety, checking ISI marks, hallmark verification, filing complaints...',
     chat_send: 'Send',
     chat_listening: 'Voice Input',
+    btn_attach: 'Attach Photo / Document',
+    btn_camera: 'Camera (Capture Photo)',
+    btn_upload: 'Add Files (Upload Image)',
+    vlm_preview_title: 'Attached for Quality & ISI/Hallmark Inspection',
+    vlm_analyzing: 'Analyzing image with Vision AI...',
+    vlm_remove: 'Remove photo',
+    vlm_badge: 'Vision AI Inspected',
     chat_disclaimer: 'Official BIS Intelligence Assistant • Strictly grounded in authorized Bureau of Indian Standards databases.',
 
     // 4-Part Answer Cards
@@ -112,6 +119,13 @@ export const translations = {
     chat_placeholder_consumer: 'उत्पाद सुरक्षा, ISI मार्क की जांच, हॉलमार्क सत्यापन या शिकायत दर्ज करने के बारे में पूछें...',
     chat_send: 'भेजें',
     chat_listening: 'ध्वनि इनपुट',
+    btn_attach: 'फ़ोटो / फ़ाइल जोड़ें',
+    btn_camera: 'कैमरा (फ़ोटो खींचे)',
+    btn_upload: 'फ़ाइलें जोड़ें (इमेज अपलोड)',
+    vlm_preview_title: 'गुणवत्ता और ISI/हॉलमार्क निरीक्षण हेतु संलग्न',
+    vlm_analyzing: 'विज़न एआई द्वारा छवि का विश्लेषण हो रहा है...',
+    vlm_remove: 'फ़ोटो हटाएं',
+    vlm_badge: 'विज़न एआई द्वारा सत्यापित',
     chat_disclaimer: 'आधिकारिक बीआईएस बुद्धिमत्ता सहायक • भारतीय मानक ब्यूरो के प्राधिकृत डेटाबेस पर आधारित।',
 
     card_answer: 'सीधा उत्तर',

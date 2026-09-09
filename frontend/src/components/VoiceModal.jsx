@@ -206,15 +206,15 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
         style={{
           width: '100%',
           maxWidth: '540px',
-          backgroundColor: '#0c1220',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-subtle)',
           borderRadius: '16px',
           padding: '28px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+          boxShadow: 'var(--shadow-hover)',
         }}
       >
         {/* Header */}
@@ -264,17 +264,17 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
             style={{
               flex: 1,
               padding: '7px 12px',
-              backgroundColor: 'rgba(15, 23, 42, 0.8)',
+              backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.85rem',
               outline: 'none',
               cursor: 'pointer',
             }}
           >
             {INDIAN_LANGUAGES.map((lang) => (
-              <option key={lang.code} value={lang.code} style={{ background: '#0f172a', color: '#fff' }}>
+              <option key={lang.code} value={lang.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                 {lang.label}
               </option>
             ))}
@@ -361,7 +361,7 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
             </div>
           ) : (
             <div>
-              <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', color: '#fff' }}>
+              <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
                 Ready to Record
               </h4>
               <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
@@ -425,13 +425,14 @@ export default function VoiceModal({ isOpen, onClose, onConfirm, defaultLang = '
               width: '100%',
               padding: '12px 14px',
               backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--border-strong)',
               borderRadius: '10px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.95rem',
               outline: 'none',
               resize: 'none',
               lineHeight: 1.5,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
           />
         </div>

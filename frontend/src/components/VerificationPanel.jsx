@@ -59,7 +59,7 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
           alignItems: 'center',
           gap: '8px',
           padding: '6px 14px',
-          background: 'rgba(249, 115, 22, 0.12)',
+          background: 'var(--accent-saffron-glow)',
           borderRadius: '9999px',
           color: 'var(--accent-saffron)',
           fontSize: '0.85rem',
@@ -68,7 +68,7 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
         }}>
           <ShieldCheck size={16} /> {t('verify_title')}
         </div>
-        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: '#fff' }}>
+        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
           {t('verify_title')}
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
@@ -100,11 +100,12 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
               borderRadius: '10px',
               border: '1px solid',
               borderColor: activeTab === tab.id ? 'var(--accent-saffron)' : 'var(--border-subtle)',
-              background: activeTab === tab.id ? 'rgba(249, 115, 22, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+              background: activeTab === tab.id ? 'var(--accent-saffron-glow)' : 'var(--bg-card)',
               color: activeTab === tab.id ? 'var(--accent-saffron)' : 'var(--text-secondary)',
               fontWeight: 600,
               cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              boxShadow: 'var(--shadow-card)'
             }}
           >
             {tab.label}
@@ -126,12 +127,13 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
                   width: '100%',
                   padding: '14px 18px',
                   backgroundColor: 'var(--bg-input)',
-                  border: '1px solid var(--border-subtle)',
+                  border: '1px solid var(--border-strong)',
                   borderRadius: '10px',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontSize: '1rem',
                   fontFamily: 'JetBrains Mono',
-                  outline: 'none'
+                  outline: 'none',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
                 }}
               />
             </div>
@@ -158,12 +160,13 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
               }}
               style={{
                 fontSize: '0.78rem',
-                padding: '4px 10px',
-                background: 'rgba(255, 255, 255, 0.05)',
+                padding: '5px 12px',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '6px',
                 color: 'var(--text-secondary)',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
               }}
             >
               {s.label} ({s.code})
@@ -186,7 +189,7 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#34d399'
+                  color: '#059669'
                 }}>
                   <CheckCircle size={26} />
                 </div>
@@ -199,17 +202,17 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#f87171'
+                  color: '#dc2626'
                 }}>
                   <AlertTriangle size={26} />
                 </div>
               )}
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#fff' }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>
                   {result.found ? 'Verified Genuine Licence Record' : 'Record Not Found / Unregistered'}
                 </h3>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  Identifier: <strong style={{ color: '#38bdf8', fontFamily: 'JetBrains Mono' }}>{result.extracted_code || code}</strong> ({result.code_type || activeTab})
+                  Identifier: <strong style={{ color: 'var(--accent-blue-deep)', fontFamily: 'JetBrains Mono' }}>{result.extracted_code || code}</strong> ({result.code_type || activeTab})
                 </span>
               </div>
             </div>
@@ -228,31 +231,31 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
 
           {result.found ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '16px' }}>
-              <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
+              <div style={{ padding: '12px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Registered Licensee</span>
-                <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#fff' }}>{result.licensee_name}</p>
+                <p style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--text-primary)' }}>{result.licensee_name}</p>
                 {result.brand && <span style={{ fontSize: '0.8rem', color: 'var(--accent-saffron)' }}>Brand: {result.brand}</span>}
               </div>
 
-              <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
+              <div style={{ padding: '12px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Product Category & Standard</span>
-                <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#fff' }}>{result.product_category}</p>
-                {result.is_code && <span style={{ fontSize: '0.8rem', color: '#38bdf8', fontFamily: 'JetBrains Mono' }}>{result.is_code}</span>}
+                <p style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--text-primary)' }}>{result.product_category}</p>
+                {result.is_code && <span style={{ fontSize: '0.8rem', color: 'var(--accent-blue)', fontFamily: 'JetBrains Mono' }}>{result.is_code}</span>}
               </div>
 
-              <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
+              <div style={{ padding: '12px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Validity Schedule</span>
-                <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#fff' }}>{result.validity_date}</p>
+                <p style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--text-primary)' }}>{result.validity_date}</p>
               </div>
 
-              <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', gridColumn: '1 / -1' }}>
+              <div style={{ padding: '12px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)', gridColumn: '1 / -1' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Official Registry Details</span>
-                <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#cbd5e1' }}>{result.details}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{result.details}</p>
               </div>
             </div>
           ) : (
-            <div style={{ padding: '16px', backgroundColor: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px', marginTop: '12px' }}>
-              <p style={{ margin: 0, color: '#fca5a5', fontSize: '0.92rem' }}>
+            <div style={{ padding: '16px', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', marginTop: '12px' }}>
+              <p style={{ margin: 0, color: '#dc2626', fontSize: '0.92rem', fontWeight: 500 }}>
                 {result.message}
               </p>
               <div style={{ marginTop: '10px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>

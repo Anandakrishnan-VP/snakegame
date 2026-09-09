@@ -12,7 +12,9 @@ import {
   ArrowRight,
   ExternalLink,
   Globe,
-  Compass
+  Compass,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 import ChatView from './components/ChatView';
@@ -28,6 +30,9 @@ import { API_BASE_URL } from './api/config';
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'journey', 'verify', 'labs', 'directory'
   const [currentLang, setCurrentLang] = useState('en');
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('bis_saathi_theme') || 'light';
+  });
   const [selectedEvidence, setSelectedEvidence] = useState(null);
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
@@ -37,6 +42,16 @@ export default function App() {
   const [apiStatus, setApiStatus] = useState('checking');
 
   const t = (key) => getTranslation(currentLang, key);
+
+  // Sync theme with document root attribute and localStorage
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('bis_saathi_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   // Check backend health
   useEffect(() => {
@@ -68,12 +83,13 @@ export default function App() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navbar */}
       <header style={{
-        backgroundColor: 'rgba(7, 9, 14, 0.85)',
+        backgroundColor: 'var(--bg-glass-strong)',
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--border-subtle)',
         position: 'sticky',
         top: 0,
-        zIndex: 100
+        zIndex: 100,
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)'
       }}>
         <div style={{
           maxWidth: '1280px',
@@ -91,28 +107,28 @@ export default function App() {
               width: '42px',
               height: '42px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #f97316 0%, #1d4ed8 100%)',
+              background: 'linear-gradient(135deg, #111315 0%, #0d9488 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
-              boxShadow: '0 4px 15px rgba(249, 115, 22, 0.3)'
+              boxShadow: '0 4px 14px rgba(13, 148, 136, 0.25)'
             }}>
               <Award size={24} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="font-heading" style={{ fontSize: '1.35rem', color: '#fff', fontWeight: 800 }}>
+                <span className="font-heading" style={{ fontSize: '1.35rem', color: 'var(--text-primary)', fontWeight: 800 }}>
                   BIS Saathi
                 </span>
                 <span style={{
                   fontSize: '0.7rem',
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  background: 'rgba(249, 115, 22, 0.15)',
-                  color: 'var(--accent-saffron)',
+                  background: 'var(--accent-saffron-glow)',
+                  color: 'var(--text-primary)',
                   fontWeight: 700,
-                  border: '1px solid rgba(249, 115, 22, 0.3)'
+                  border: '1px solid var(--border-active)'
                 }}>
                   SIH26107
                 </span>
@@ -128,7 +144,7 @@ export default function App() {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: 'rgba(255, 255, 255, 0.04)',
+            background: 'var(--bg-surface)',
             padding: '4px',
             borderRadius: '12px',
             border: '1px solid var(--border-subtle)',
@@ -155,11 +171,12 @@ export default function App() {
                     borderRadius: '8px',
                     border: 'none',
                     background: isActive ? 'var(--accent-saffron)' : 'transparent',
-                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    color: isActive ? '#ffffff' : 'var(--text-secondary)',
                     fontWeight: 600,
                     fontSize: '0.82rem',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    boxShadow: isActive ? '0 2px 8px var(--accent-saffron-glow)' : 'none'
                   }}
                 >
                   <Icon size={15} />
@@ -169,27 +186,27 @@ export default function App() {
             })}
           </nav>
 
-          {/* Right Controls: Global Language Selector & Status */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Right Controls: Global Language Selector, Theme Switcher & Status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {/* Global Indian Language Dropdown */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'rgba(255, 255, 255, 0.06)',
-              padding: '4px 10px',
+              background: 'var(--bg-card)',
+              padding: '5px 10px',
               borderRadius: '10px',
-              border: '1px solid rgba(249, 115, 22, 0.35)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              border: '1px solid var(--border-subtle)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
             }}>
-              <Globe size={15} color="var(--accent-saffron)" />
+              <Globe size={15} color="var(--accent-aqua)" />
               <select
                 value={currentLang}
                 onChange={(e) => setCurrentLang(e.target.value)}
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontSize: '0.82rem',
                   fontWeight: 600,
                   outline: 'none',
@@ -197,15 +214,42 @@ export default function App() {
                 }}
               >
                 {SUPPORTED_LANGUAGES.map((l) => (
-                  <option key={l.code} value={l.code} style={{ background: '#0b0f19', color: '#fff' }}>
+                  <option key={l.code} value={l.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                     {l.native} ({l.label})
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Theme Switcher Button */}
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+              aria-label="Toggle Color Theme"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-subtle)',
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
+              }}
+            >
+              {theme === 'light' ? (
+                <Moon size={17} color="var(--accent-blue-deep)" />
+              ) : (
+                <Sun size={17} color="#f59e0b" />
+              )}
+            </button>
+
             {/* Backend Status Indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '4px' }}>
               <span style={{
                 width: '8px',
                 height: '8px',

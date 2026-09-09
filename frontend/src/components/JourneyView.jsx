@@ -201,16 +201,17 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #f97316 0%, #1d4ed8 100%)',
+                background: 'linear-gradient(135deg, #111315 0%, #0d9488 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#fff'
+                color: '#fff',
+                boxShadow: '0 4px 14px rgba(13, 148, 136, 0.25)'
               }}>
                 <Award size={22} />
               </div>
               <div>
-                <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#fff', fontWeight: 700 }}>
+                <h2 style={{ margin: 0, fontSize: '1.4rem', color: 'var(--text-primary)', fontWeight: 700 }}>
                   {t('tab_journey') || 'Certification Journey & Compliance Roadmap'}
                 </h2>
                 <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -223,7 +224,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
           {/* Journey Type Toggle */}
           <div style={{
             display: 'flex',
-            background: 'rgba(255, 255, 255, 0.05)',
+            background: 'var(--bg-surface)',
             padding: '4px',
             borderRadius: '10px',
             border: '1px solid var(--border-subtle)'
@@ -305,11 +306,11 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
                   style={{
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-strong)',
                     borderRadius: '6px',
                     padding: '6px 10px',
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                     fontSize: '0.78rem',
                     width: '190px',
                     outline: 'none'
@@ -318,10 +319,10 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                 <button
                   type="submit"
                   style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
+                    background: 'var(--btn-secondary-bg)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: '6px',
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                     padding: '6px 12px',
                     fontSize: '0.78rem',
                     cursor: 'pointer'
@@ -345,9 +346,9 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
           {/* Readiness Score & Action Hero */}
           <div className="glass-panel" style={{
             padding: '24px 28px',
-            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%)',
+            background: 'var(--bg-card)',
             border: `1px solid ${scoreColor}40`,
-            boxShadow: `0 8px 30px ${scoreColor}15`
+            boxShadow: 'var(--shadow-card)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -356,13 +357,13 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   width: '84px',
                   height: '84px',
                   borderRadius: '50%',
-                  background: 'rgba(0, 0, 0, 0.4)',
+                  background: 'var(--bg-surface)',
                   border: `4px solid ${scoreColor}`,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: `0 0 20px ${scoreColor}30`
+                  boxShadow: `0 0 20px ${scoreColor}25`
                 }}>
                   <span style={{ fontSize: '1.7rem', fontWeight: 800, color: scoreColor, lineHeight: 1 }}>
                     {score}%
@@ -374,7 +375,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
 
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                       {metadata.title || journey.standard_id || 'Compliance Journey'}
                     </span>
                     {metadata.qco_status && (
@@ -437,7 +438,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
             </div>
 
             {/* Progress Bar */}
-            <div style={{ marginTop: '18px', width: '100%', height: '8px', background: 'rgba(0,0,0,0.4)', borderRadius: '9999px', overflow: 'hidden' }}>
+            <div style={{ marginTop: '18px', width: '100%', height: '8px', background: 'var(--bg-surface)', borderRadius: '9999px', overflow: 'hidden' }}>
               <div style={{
                 width: `${score}%`,
                 height: '100%',
@@ -451,7 +452,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
           {/* Stepper Checklist */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#fff', fontWeight: 600 }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>
                 Compliance & Certification Milestones
               </h3>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -471,7 +472,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   style={{
                     padding: '18px 22px',
                     borderLeft: `4px solid ${isDone ? '#22c55e' : 'var(--border-subtle)'}`,
-                    background: isDone ? 'rgba(34, 197, 94, 0.03)' : 'var(--bg-glass)',
+                    background: isDone ? 'rgba(34, 197, 94, 0.05)' : 'var(--bg-card)',
                     transition: 'all 0.2s ease'
                   }}
                 >
@@ -600,14 +601,14 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
             <div className="glass-panel" style={{ padding: '20px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <FlaskConical size={18} color="var(--accent-saffron)" />
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#fff' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                   Accredited Testing Facilities Mapped to {journey.standard_id}
                 </h4>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
                 {metadata.labs.map((lab, i) => (
-                  <div key={i} style={{ padding: '12px 14px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>{lab.name}</div>
+                  <div key={i} style={{ padding: '12px 14px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{lab.name}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px' }}>
                       City: <b>{lab.city}</b> • Contact: {lab.phone}
                     </div>
@@ -634,7 +635,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
             <Award size={32} />
           </div>
 
-          <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#fff', fontWeight: 700 }}>
+          <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text-primary)', fontWeight: 700 }}>
             {journeyType === 'get_certified' ? 'Select a Product or Standard to Begin' : 'Enter a Licence or Hallmark to Verify'}
           </h3>
           <p style={{ margin: '8px auto 24px', fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '560px', lineHeight: 1.5 }}>
@@ -659,26 +660,26 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   style={{
                     padding: '16px',
                     borderRadius: '10px',
-                    background: 'rgba(255, 255, 255, 0.04)',
+                    background: 'var(--bg-surface)',
                     border: '1px solid var(--border-subtle)',
                     textAlign: 'left',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    color: '#fff'
+                    color: 'var(--text-primary)'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = 'var(--accent-saffron)';
-                    e.currentTarget.style.background = 'rgba(249, 115, 22, 0.08)';
+                    e.currentTarget.style.background = 'var(--accent-saffron-glow)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                    e.currentTarget.style.background = 'var(--bg-surface)';
                   }}
                 >
                   <div style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
                     {item.qco}
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#fff', marginTop: '4px' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-primary)', marginTop: '4px' }}>
                     {item.title}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: 'JetBrains Mono' }}>
@@ -696,11 +697,11 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                 onChange={(e) => setCustomInput(e.target.value)}
                 style={{
                   flex: 1,
-                  background: 'rgba(0, 0, 0, 0.4)',
-                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-input)',
+                  border: '1px solid var(--border-strong)',
                   borderRadius: '8px',
                   padding: '10px 14px',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontSize: '0.88rem',
                   outline: 'none'
                 }}

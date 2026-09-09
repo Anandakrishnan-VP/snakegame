@@ -51,14 +51,20 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
         if lower_query in title:
             score += 10.0
 
-        # Synonym exact match
+        # Synonym matching
+        matched_tokens_in_synonyms = set()
         for syn in synonyms:
             if syn == lower_query:
                 score += 12.0
             elif syn in lower_query:
                 score += 8.0
-            elif any(t in syn for t in tokens):
-                score += 3.0
+            else:
+                for t in tokens:
+                    t_stem = t.rstrip('s') if len(t) > 3 else t
+                    if t in syn or (len(t_stem) > 2 and t_stem in syn):
+                        matched_tokens_in_synonyms.add(t)
+
+        score += min(len(matched_tokens_in_synonyms) * 3.0, 9.0)
 
         # Token overlap in title
         for token in tokens:

@@ -58,7 +58,7 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
         }}>
           <FlaskConical size={16} /> {t('labs_title')}
         </div>
-        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: '#fff' }}>
+        <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
           {t('labs_title')}
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
@@ -77,15 +77,16 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
               width: '100%',
               padding: '12px 14px',
               backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--border-strong)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.9rem',
-              outline: 'none'
+              outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
           >
             {standardsList.map((s) => (
-              <option key={s.code} value={s.code} style={{ background: '#0b0f19' }}>{s.label}</option>
+              <option key={s.code} value={s.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{s.label}</option>
             ))}
           </select>
         </div>
@@ -99,15 +100,16 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
               width: '100%',
               padding: '12px 14px',
               backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--border-strong)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '0.9rem',
-              outline: 'none'
+              outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
           >
             {cities.map((c) => (
-              <option key={c} value={c} style={{ background: '#0b0f19' }}>{c}</option>
+              <option key={c} value={c} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{c}</option>
             ))}
           </select>
         </div>
@@ -118,7 +120,7 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
           {loading ? 'Searching laboratories...' : (
             <>
-              Showing <strong style={{ color: '#fff' }}>{labs.length}</strong> {labs.length === 1 ? 'laboratory' : 'laboratories'} {city && city !== 'All Cities' ? <>for <strong style={{ color: 'var(--accent-saffron)' }}>{city}</strong></> : 'across India'}
+              Showing <strong style={{ color: 'var(--text-primary)' }}>{labs.length}</strong> {labs.length === 1 ? 'laboratory' : 'laboratories'} {city && city !== 'All Cities' ? <>for <strong style={{ color: 'var(--accent-saffron)' }}>{city}</strong></> : 'across India'}
             </>
           )}
         </span>
@@ -143,7 +145,7 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
       {!loading && labs.length === 0 && (
         <div className="glass-card" style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
           <FlaskConical size={38} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-          <p style={{ margin: 0, fontSize: '1.05rem', color: '#fff', fontWeight: 600 }}>No Testing Laboratories Found</p>
+          <p style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>No Testing Laboratories Found</p>
           <p style={{ margin: '8px 0 16px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             No accredited lab matches your chosen standard and city filter.
           </p>
@@ -165,9 +167,9 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
               {lab.fallback_note && (
                 <div style={{
                   fontSize: '0.78rem',
-                  color: '#fbbf24',
-                  background: 'rgba(245, 158, 11, 0.12)',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  color: 'var(--accent-amber)',
+                  background: 'rgba(217, 119, 6, 0.1)',
+                  border: '1px solid rgba(217, 119, 6, 0.25)',
                   borderRadius: '6px',
                   padding: '5px 10px',
                   marginBottom: '12px',
@@ -181,13 +183,13 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
               )}
 
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' }}>
-                <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#fff' }}>{lab.lab_name}</h4>
+                <h4 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{lab.lab_name}</h4>
                 <span style={{
                   fontSize: '0.75rem',
                   padding: '4px 10px',
                   borderRadius: '9999px',
-                  background: lab.lab_type === 'Central' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                  color: lab.lab_type === 'Central' ? 'var(--accent-saffron)' : '#38bdf8',
+                  background: lab.lab_type === 'Central' ? 'var(--accent-saffron-glow)' : 'var(--accent-blue-glow)',
+                  color: lab.lab_type === 'Central' ? 'var(--accent-saffron)' : 'var(--accent-blue)',
                   fontWeight: 600,
                   whiteSpace: 'nowrap'
                 }}>
@@ -201,7 +203,7 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
               </div>
 
               {lab.is_nabl_accredited && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#34d399', fontSize: '0.78rem', background: 'rgba(16, 185, 129, 0.1)', padding: '3px 8px', borderRadius: '4px', marginBottom: '12px' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--accent-emerald)', fontSize: '0.78rem', background: 'var(--accent-emerald-glow)', padding: '3px 8px', borderRadius: '4px', marginBottom: '12px' }}>
                   <ShieldCheck size={14} /> NABL ISO/IEC 17025 Accredited
                 </div>
               )}
