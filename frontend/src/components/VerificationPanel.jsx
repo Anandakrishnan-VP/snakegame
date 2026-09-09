@@ -85,9 +85,9 @@ export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) 
         marginBottom: '20px'
       }}>
         {[
-          { id: 'CML', label: 'ISI Mark (CM/L)' },
-          { id: 'HUID', label: 'Gold Hallmark (HUID)' },
-          { id: 'CRS', label: 'Electronics (CRS R-No)' }
+          { id: 'CML', label: t('verify_tab_cml') },
+          { id: 'HUID', label: t('verify_tab_huid') },
+          { id: 'CRS', label: t('verify_tab_crs') }
         ].map((tab) => (
           <button
             key={tab.id}

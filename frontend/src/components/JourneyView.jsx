@@ -231,6 +231,32 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
     setCustomInput('');
   };
 
+  const getLocalizedStep = (step) => {
+    let prefix = 'ms_sch1';
+    const schemeLower = (journey?.scheme || '').toLowerCase();
+    if (journeyType === 'verify_protect' || schemeLower.includes('verification')) {
+      prefix = 'ms_cons';
+    } else if (schemeLower.includes('crs')) {
+      prefix = 'ms_crs';
+    } else if (schemeLower.includes('voluntary')) {
+      prefix = 'ms_vol';
+    }
+
+    const titleKey = `${prefix}_${step.step_number}_title`;
+    const descKey = `${prefix}_${step.step_number}_desc`;
+    const timeKey = `${prefix}_${step.step_number}_time`;
+
+    const transTitle = t(titleKey);
+    const transDesc = t(descKey);
+    const transTime = t(timeKey);
+
+    return {
+      title: transTitle && transTitle !== titleKey ? transTitle : step.title,
+      description: transDesc && transDesc !== descKey ? transDesc : step.description,
+      indicative_timeline: transTime && transTime !== timeKey ? transTime : step.indicative_timeline
+    };
+  };
+
   const score = journey?.readiness_score || 0;
   const scoreColor = score >= 80 ? '#22c55e' : score >= 40 ? '#f59e0b' : 'var(--accent-saffron)';
   const metadata = journey?.metadata || {};
@@ -260,7 +286,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   {t('tab_journey') || 'Certification Journey & Compliance Roadmap'}
                 </h2>
                 <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  Interactive step-by-step readiness wizard with live percentage and downloadable PDF roadmap.
+                  {t('journey_subtitle')}
                 </p>
               </div>
             </div>
@@ -293,7 +319,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
               }}
             >
               <Building2 size={15} />
-              <span>Get Certified (MSME)</span>
+              <span>{t('journey_get_certified')}</span>
             </button>
             <button
               onClick={() => handleSwitchType('verify_protect')}
@@ -314,7 +340,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
               }}
             >
               <ShieldCheck size={15} />
-              <span>Verify & Protect (Consumer)</span>
+              <span>{t('journey_verify_protect')}</span>
             </button>
           </div>
         </div>
@@ -324,7 +350,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
           <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Quick Standards:</span>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{t('quick_standards_lbl')}</span>
                 {QUICK_STANDARDS.map((q) => (
                   <button
                     key={q.code}
@@ -351,7 +377,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
               <form onSubmit={handleCustomSubmit} style={{ display: 'flex', gap: '6px' }}>
                 <input
                   type="text"
-                  placeholder="Or enter IS code (e.g. IS 269)..."
+                  placeholder={t('input_is_code_placeholder')}
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
                   style={{
@@ -376,7 +402,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                     fontSize: '0.78rem'
                   }}
                 >
-                  Load
+                  {t('btn_load')}
                 </button>
               </form>
             </div>
@@ -387,7 +413,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
       {loading ? (
         <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
           <Loader2 size={32} color="var(--accent-aqua)" className="animate-spin" />
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading compliance roadmap and readiness metrics...</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('loading_roadmap')}</span>
         </div>
       ) : notFoundError ? (
         <div className="glass-panel" style={{
@@ -416,7 +442,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
             <div style={{ flex: 1, minWidth: '280px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text-primary)', fontWeight: 700 }}>
-                  No Data Found for "{notFoundError.standardId}"
+                  {t('no_data_found_for')} "{notFoundError.standardId}"
                 </h3>
                 <span style={{
                   fontSize: '0.72rem',
@@ -427,7 +453,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   fontWeight: 700,
                   border: '1px solid rgba(239, 68, 68, 0.4)'
                 }}>
-                  STANDARD NOT IN DATABASE
+                  {t('standard_not_in_db')}
                 </span>
               </div>
 
@@ -456,7 +482,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   }}
                 >
                   <ExternalLink size={16} />
-                  <span>Search Official BIS Portal</span>
+                  <span>{t('btn_search_portal')}</span>
                 </a>
 
                 <button
@@ -477,7 +503,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                     cursor: 'pointer'
                   }}
                 >
-                  <span>Browse Supported Standards</span>
+                  <span>{t('btn_browse_standards')}</span>
                 </button>
               </div>
             </div>
@@ -486,7 +512,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
           {/* Supported standards quick chooser */}
           <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
-              Or choose one of our verified, fully-mapped Indian Standards:
+              {t('choose_verified_standards')}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
               {[
@@ -542,11 +568,11 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                     <Sparkles size={20} color="var(--accent-aqua)" />
                     <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Showing Default Scheme-I Template • Choose Your Own Indian Standard (ISI)
+                      {t('default_template_banner_title')}
                     </span>
                   </div>
                   <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                    You are currently viewing the <b>general Scheme-I certification sequence</b>. Select your product below or enter an IS code to customize the milestones, mandatory Quality Control Orders (QCOs), and testing laboratories for your business.
+                    {t('default_template_banner_desc')}
                   </p>
                 </div>
               </div>
@@ -555,7 +581,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
               <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    Select Your Product:
+                    {t('select_your_product')}
                   </span>
                   {QUICK_STANDARDS.map((q) => (
                     <button
@@ -589,7 +615,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                 <form onSubmit={handleCustomSubmit} style={{ display: 'flex', gap: '6px' }}>
                   <input
                     type="text"
-                    placeholder="Enter IS code (e.g. IS 269)..."
+                    placeholder={t('input_is_code_placeholder')}
                     value={customInput}
                     onChange={(e) => setCustomInput(e.target.value)}
                     style={{
@@ -611,7 +637,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                     className="btn-primary"
                     style={{ padding: '6px 12px', fontSize: '0.78rem' }}
                   >
-                    Customize
+                    {t('btn_customize')}
                   </button>
                 </form>
               </div>
@@ -630,7 +656,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
               color: 'var(--text-secondary)'
             }}>
               <div>
-                Active Standard: <b style={{ color: 'var(--text-primary)' }}>{journey.standard_id}</b> ({metadata.title})
+                {t('active_standard_lbl')} <b style={{ color: 'var(--text-primary)' }}>{journey.standard_id}</b> ({metadata.title})
               </div>
               <button
                 onClick={() => {
@@ -648,7 +674,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   textDecoration: 'underline'
                 }}
               >
-                Reset to Default Template
+                {t('btn_reset_default')}
               </button>
             </div>
           )}
@@ -679,7 +705,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                     {score}%
                   </span>
                   <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>
-                    Ready
+                    {t('lbl_ready')}
                   </span>
                 </div>
 
@@ -706,12 +732,12 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                         fontWeight: 700,
                         border: '1px solid currentColor'
                       }}>
-                        {(metadata.is_default_template || journey.standard_id === 'Scheme-I Template') ? 'DEFAULT TEMPLATE' : metadata.qco_status.toUpperCase()}
+                        {(metadata.is_default_template || journey.standard_id === 'Scheme-I Template') ? t('default_template_badge') : metadata.qco_status.toUpperCase()}
                       </span>
                     )}
                   </div>
                   <p style={{ margin: '4px 0 0', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
-                    <b>{journey.scheme}</b> • {journey.steps?.filter((s) => s.status === 'done').length} of {journey.steps?.length} milestones achieved • Free-form sequence
+                    <b>{journey.scheme}</b> • {journey.steps?.filter((s) => s.status === 'done').length} of {journey.steps?.length} {t('milestones_achieved')}
                   </p>
                 </div>
               </div>
@@ -731,7 +757,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   title="Download clean 1-page printable compliance roadmap"
                 >
                   <Download size={16} />
-                  <span>Download Roadmap PDF</span>
+                  <span>{t('btn_download_pdf')}</span>
                 </button>
 
                 <button
@@ -748,7 +774,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                     cursor: 'pointer',
                     fontSize: '0.85rem'
                   }}
-                  title="Reset journey checklist"
+                  title={t('btn_reset_checklist')}
                 >
                   <RotateCcw size={15} />
                 </button>
@@ -771,10 +797,10 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
               <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-                Compliance & Certification Milestones
+                {t('journey_milestones_title')}
               </h3>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                Check off items as your factory or team completes them:
+                {t('journey_milestones_subtitle')}
               </span>
             </div>
 
@@ -782,6 +808,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
               const isDone = step.status === 'done';
               const isExpanded = !!expandedSteps[step.step_id];
               const isUpdating = updatingStepId === step.step_id;
+              const localized = getLocalizedStep(step);
 
               return (
                 <div
@@ -812,7 +839,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                           justifyContent: 'center',
                           transition: 'transform 0.15s'
                         }}
-                        title={isDone ? 'Mark as pending' : 'Mark as completed'}
+                        title={isDone ? t('mark_as_pending') : t('mark_as_completed')}
                       >
                         {isUpdating ? (
                           <Loader2 size={22} className="animate-spin" color="var(--accent-aqua)" />
@@ -833,7 +860,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                             background: 'var(--bg-surface)',
                             color: 'var(--text-secondary)'
                           }}>
-                            STEP {step.step_number}
+                            {t('lbl_step')} {step.step_number}
                           </span>
                           <span style={{
                             fontSize: '0.98rem',
@@ -841,10 +868,10 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                             color: isDone ? 'var(--text-muted)' : 'var(--text-primary)',
                             textDecoration: isDone ? 'line-through' : 'none'
                           }}>
-                            {step.title}
+                            {localized.title}
                           </span>
 
-                          {step.indicative_timeline && (
+                          {localized.indicative_timeline && (
                             <span style={{
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -855,7 +882,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                               padding: '2px 8px',
                               borderRadius: '9999px'
                             }}>
-                              <Clock size={11} /> {step.indicative_timeline}
+                              <Clock size={11} /> {localized.indicative_timeline}
                             </span>
                           )}
                         </div>
@@ -864,7 +891,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                         {isExpanded ? (
                           <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                              {step.description}
+                              {localized.description}
                             </p>
 
                             {step.source_ref && (
@@ -882,14 +909,14 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                                     gap: '4px'
                                   }}
                                 >
-                                  <ExternalLink size={12} /> Official Portal Reference
+                                  <ExternalLink size={12} /> {t('btn_official_portal_ref')}
                                 </a>
                               </div>
                             )}
                           </div>
                         ) : (
                           <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '680px' }}>
-                            {step.description}
+                            {localized.description}
                           </p>
                         )}
                       </div>
@@ -920,7 +947,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <FlaskConical size={18} color="var(--accent-aqua)" />
                 <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                  Accredited Testing Facilities Mapped to {journey.standard_id}
+                  {t('journey_labs_title')} {journey.standard_id}
                 </h4>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
@@ -928,7 +955,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                   <div key={i} style={{ padding: '12px 14px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                     <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{lab.name}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-                      City: <b>{lab.city}</b> • Contact: {lab.phone}
+                      {t('city_lbl')} <b>{lab.city}</b> • {t('contact_lbl')} {lab.phone}
                     </div>
                   </div>
                 ))}
@@ -955,12 +982,12 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
           </div>
 
           <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text-primary)', fontWeight: 700 }}>
-            {journeyType === 'get_certified' ? 'Select a Product or Standard to Begin' : 'Enter a Licence or Hallmark to Verify'}
+            {journeyType === 'get_certified' ? t('empty_journey_cert_title') : t('empty_journey_verify_title')}
           </h3>
           <p style={{ margin: '8px auto 24px', fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '560px', lineHeight: 1.5 }}>
             {journeyType === 'get_certified' 
-              ? 'Choose one of the common Indian Standards below, type an IS code into the search box above, or ask about your product in the Chat tab and click "Start My Certification Journey".'
-              : 'Track the step-by-step verification, licensee scope audit, and authenticity confirmation for consumer protection.'}
+              ? t('empty_journey_cert_desc')
+              : t('empty_journey_verify_desc')}
           </p>
 
           {journeyType === 'get_certified' ? (
@@ -1011,7 +1038,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
             <div style={{ maxWidth: '420px', margin: '0 auto', display: 'flex', gap: '8px' }}>
               <input
                 type="text"
-                placeholder="Enter CM/L (e.g. 1234567) or HUID (e.g. AB1234)..."
+                placeholder={t('placeholder_verify_input')}
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
                 style={{
@@ -1037,7 +1064,7 @@ export default function JourneyView({ initialStandardId, currentLang = 'en', t =
                 className="btn-primary"
                 style={{ padding: '10px 18px', fontSize: '0.85rem' }}
               >
-                Start Verification
+                {t('btn_start_verification')}
               </button>
             </div>
           )}

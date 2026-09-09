@@ -131,17 +131,17 @@ export default function ChatView({
   };
 
   const msmePrompts = [
-    { label: 'Bottle Manufacturing', query: 'I am manufacturing stainless steel vacuum water bottles for kids. What are the rules?' },
-    { label: 'Toy Compliance', query: 'What are the mandatory quality standards and test requirements to manufacture toys?' },
-    { label: 'Scheme-I Steps', query: 'What are the exact factory audit and Scheme-I steps for ISI certification?' },
-    { label: 'MSME Concessions', query: 'What fee concessions are available for MSMEs and startups in BIS certification?' }
+    { label: t('qp_bottle_mfg_label'), query: t('qp_bottle_mfg_query') },
+    { label: t('qp_toy_comp_label'), query: t('qp_toy_comp_query') },
+    { label: t('qp_scheme1_label'), query: t('qp_scheme1_query') },
+    { label: t('qp_msme_concessions_label'), query: t('qp_msme_concessions_query') }
   ];
 
   const consumerPrompts = [
-    { label: 'Bottle Safety Check', query: 'How can I verify if a stainless steel water bottle is safe and genuine before buying?' },
-    { label: 'Toy Safety for Kids', query: 'Are plastic toys safe for toddlers and how do I check the ISI mark?' },
-    { label: 'Check Gold Hallmark', query: 'How do I verify 6-digit HUID gold hallmark on jewellery using BIS Care app?' },
-    { label: 'Report Defective Item', query: 'How can I file a complaint against a defective or fake ISI-marked product?' }
+    { label: t('qp_bottle_safety_label'), query: t('qp_bottle_safety_query') },
+    { label: t('qp_toy_safety_label'), query: t('qp_toy_safety_query') },
+    { label: t('qp_gold_hallmark_label'), query: t('qp_gold_hallmark_query') },
+    { label: t('qp_report_defect_label'), query: t('qp_report_defect_query') }
   ];
 
   const quickPrompts = persona === 'consumer' ? consumerPrompts : msmePrompts;
@@ -323,7 +323,7 @@ export default function ChatView({
       }}>
         {/* Active Topic Tag */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Topic:</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{t('lbl_topic')}</span>
           {activeTopic ? (
             <span style={{
               display: 'inline-flex',
@@ -376,7 +376,7 @@ export default function ChatView({
             e.currentTarget.style.borderColor = 'var(--border-subtle)';
           }}
         >
-          <RotateCcw size={12} /> New Chat
+          <RotateCcw size={12} /> {t('btn_new_chat')}
         </button>
       </div>
 
@@ -460,7 +460,7 @@ export default function ChatView({
                         background: 'rgba(13, 148, 136, 0.14)',
                         border: '1px solid rgba(13, 148, 136, 0.3)'
                       }}>
-                        <Users size={12} /> Consumer Safety & Buying Advisory
+                        <Users size={12} /> {t('badge_consumer_advisory')}
                       </span>
                     ) : (
                       <span style={{
@@ -475,7 +475,7 @@ export default function ChatView({
                         background: 'var(--bg-surface)',
                         border: '1px solid var(--border-subtle)'
                       }}>
-                        <Building2 size={12} /> MSME Compliance & Licensing Advisory
+                        <Building2 size={12} /> {t('badge_msme_advisory')}
                       </span>
                     )}
                     {(msg.intent === 'VLM_IMAGE_INSPECTION' || msg.detected_product || msg.provider?.includes('vlm')) && (
@@ -497,7 +497,7 @@ export default function ChatView({
                   </div>
                   {msg.from_cache && (
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Clock size={11} /> Cached Result
+                      <Clock size={11} /> {t('cached_result')}
                     </span>
                   )}
                 </div>
@@ -526,11 +526,11 @@ export default function ChatView({
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em'
                     }}>
-                      {msg.persona === 'consumer' ? 'Product Safety & Quality Summary' : 'Industrial Compliance Answer'}
+                      {msg.persona === 'consumer' ? t('badge_consumer_summary') : t('badge_industrial_answer')}
                     </span>
                   </div>
                   <p style={{ margin: 0, fontSize: '0.98rem', color: 'var(--text-primary)', lineHeight: 1.6, fontWeight: 500 }}>
-                    {msg.answer}
+                    {msg.id === 'welcome' ? t('welcome_answer') : msg.answer}
                   </p>
                 </div>
 
@@ -546,10 +546,10 @@ export default function ChatView({
                       display: 'block',
                       marginBottom: '4px'
                     }}>
-                      {msg.persona === 'consumer' ? '🔍 What to Check Before Buying (Packaging & Safety)' : '🏭 Factory & Scheme Implications (MSME & Audit)'}
+                      {msg.persona === 'consumer' ? `🔍 ${t('badge_consumer_check')}` : `🏭 ${t('badge_factory_implications')}`}
                     </span>
                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                      {msg.what_it_means}
+                      {msg.id === 'welcome' ? t('welcome_meaning') : msg.what_it_means}
                     </p>
                   </div>
                 )}
@@ -570,11 +570,11 @@ export default function ChatView({
                         letterSpacing: '0.04em',
                         fontWeight: 600
                       }}>
-                        {msg.persona === 'consumer' ? 'Citizen Action: Verify on BIS Care App / Grievance' : 'Manufacturer Roadmap: Form V & Testing Action'}
+                        {msg.persona === 'consumer' ? t('badge_citizen_action') : t('badge_manufacturer_roadmap')}
                       </span>
                     </div>
                     <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 500 }}>
-                      {msg.next_action}
+                      {msg.id === 'welcome' ? t('welcome_action') : msg.next_action}
                     </p>
 
                     {onStartJourney && msg.persona !== 'consumer' && (msg.active_topic || (msg.evidence_tag && msg.evidence_tag.reference && msg.evidence_tag.reference.includes('IS '))) && (
@@ -597,7 +597,7 @@ export default function ChatView({
                             boxShadow: '0 2px 10px var(--accent-aqua-glow)'
                           }}
                         >
-                          <Award size={14} /> Start Certification Journey Wizard <ArrowRight size={12} />
+                          <Award size={14} /> {t('btn_start_journey')} <ArrowRight size={12} />
                         </button>
                       </div>
                     )}
@@ -671,7 +671,7 @@ export default function ChatView({
                           }}
                           title="Open official government source document or portal"
                         >
-                          <ExternalLink size={12} /> Direct Document
+                          <ExternalLink size={12} /> {t('btn_direct_document')}
                         </a>
                       )}
                       <button
@@ -704,7 +704,7 @@ export default function ChatView({
         {loading && (
           <div style={{ display: 'flex', gap: '8px', padding: '12px 18px', background: 'var(--bg-glass)', borderRadius: '12px', width: 'fit-content' }}>
             <Sparkles size={18} color="var(--accent-aqua)" className="animate-spin" />
-            <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>Consulting BIS knowledge base & compliance chain...</span>
+            <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{t('chat_loading')}</span>
           </div>
         )}
 
@@ -732,7 +732,7 @@ export default function ChatView({
           {/* Persona Toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Mode:
+              {t('lbl_mode')}
             </span>
             <div style={{
               display: 'inline-flex',
@@ -798,9 +798,10 @@ export default function ChatView({
             background: 'var(--bg-surface)',
             padding: '4px 10px',
             borderRadius: '8px',
-            border: '1px solid var(--border-subtle)'
+            border: '1px solid var(--border-subtle)',
+            flexShrink: 0
           }}>
-            <Globe size={14} color="var(--accent-aqua)" />
+            <Globe size={14} color="var(--accent-aqua)" style={{ flexShrink: 0 }} />
             <select
               value={currentLang}
               onChange={(e) => setCurrentLang && setCurrentLang(e.target.value)}
@@ -811,7 +812,11 @@ export default function ChatView({
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 outline: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                maxWidth: '140px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
               }}
             >
               {SUPPORTED_LANGUAGES.map((l) => (
@@ -920,10 +925,10 @@ export default function ChatView({
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {t('vlm_preview_title') || 'Attached for Quality & ISI/Hallmark Inspection'}
+                  {t('vlm_preview_title')}
                 </span>
                 <span style={{ fontSize: '0.74rem', color: 'var(--accent-aqua)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Sparkles size={12} /> Ready for Vision AI verification
+                  <Sparkles size={12} /> {t('vlm_ready')}
                 </span>
               </div>
             </div>
@@ -1018,7 +1023,7 @@ export default function ChatView({
                     </div>
                     <div>
                       <div style={{ fontWeight: 600 }}>{t('btn_camera') || 'Camera'}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Take live photo</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('vlm_take_photo')}</div>
                     </div>
                   </button>
 
@@ -1063,7 +1068,7 @@ export default function ChatView({
                     </div>
                     <div>
                       <div style={{ fontWeight: 600 }}>{t('btn_upload') || 'Add Files'}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Upload from device</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('vlm_upload_device')}</div>
                     </div>
                   </button>
                 </div>
@@ -1104,7 +1109,7 @@ export default function ChatView({
               onChange={(e) => setInputQuery(e.target.value)}
               placeholder={
                 attachedImage
-                  ? "Optional: ask specific question or press send to analyze..."
+                  ? t('chat_placeholder_image')
                   : persona === 'consumer'
                     ? t('chat_placeholder_consumer')
                     : t('chat_placeholder_msme')

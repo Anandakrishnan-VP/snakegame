@@ -663,6 +663,15 @@ def api_get_journey_pdf(journey_id: str):
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+@app.get("/api/qco-bulletin")
+def api_get_qco_bulletin(refresh: bool = False):
+    """
+    Returns live Gazette and Quality Control Order notifications.
+    Supports on-demand real-time re-sync via ?refresh=true.
+    """
+    from backend.services.qco_bulletin import get_qco_bulletin
+    return get_qco_bulletin(force_refresh=refresh)
+
 # Static Frontend Mount & SPA Fallback (When deployed or serving locally)
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():
