@@ -151,8 +151,8 @@ def route_intent(query: str) -> Dict[str, Any]:
 
     text = query.lower().strip()
 
-    # 1. Verification Fast-Path (explicit CM/L, HUID, CRS R-number or verify keyword)
-    if re.search(r'\b(?:cml|cm/l|huid|crs|r-\d{8})\b', text) or (re.search(r'\bverify\b', text) and re.search(r'\b(?:code|number|licence|license|mark|hallmark)\b', text)):
+    # 1. Verification Fast-Path (Requires actual licence/registration code pattern or verification verbs)
+    if re.search(r'\b(?:cml\s*\d{6,8}|cm/l\s*[-/]?\s*\d{6,8}|r-\d{8})\b', text) or re.search(r'\b(?:verify|authenticate|check\s+(?:huid|cml|licen|validity|authenticity))\b', text):
         return {"intent": "VERIFICATION", "confidence": 0.95, "method": "regex_fastpath"}
 
     # 2. General FAQ Fast-Path (Institution, Apps, Portals, Core Concepts)
@@ -188,6 +188,11 @@ def route_intent(query: str) -> Dict[str, Any]:
     if best_score < 0.12:
         # Default to PRODUCT_TO_STANDARD if product keywords or general inquiry
         return {"intent": "PRODUCT_TO_STANDARD", "confidence": 0.50, "method": "default_fallback"}
+
+    # Guard: Never route to VERIFICATION in TF-IDF fallback unless query contains verification signals.
+    # Queries like 'solar panel bis' or 'bis helmet' are product inquiries, NOT licence checks.
+    if best_intent == "VERIFICATION" and not re.search(r'\b(?:verif|check|authenticat|valid|licen|cml|huid|crs|regis)\b', text):
+        best_intent = "PRODUCT_TO_STANDARD"
 
     return {
         "intent": best_intent,

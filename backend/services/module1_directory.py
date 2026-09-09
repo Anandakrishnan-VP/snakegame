@@ -11,12 +11,8 @@ from backend.db.database import get_db_connection
 STOP_WORDS = {
     "is", "standard", "standards", "indian", "specification", "specifications",
     "code", "codes", "in", "of", "to", "for", "and", "the", "a", "an", "on", "at", "by", "or",
-    "part", "sec", "section", "i", "we", "my", "our", "you", "your", "he", "she", "they",
-    "make", "making", "makes", "manufacture", "manufacturing", "manufacturer", "manufacturers",
-    "produce", "producing", "produces", "producer", "producers", "sell", "selling", "seller",
-    "buy", "buying", "buyer", "want", "wants", "need", "needs", "get", "do", "does", "did",
-    "how", "what", "where", "which", "who", "when", "can", "could", "should", "would",
-    "help", "please", "tell", "about", "product", "products", "item", "items", "good", "goods"
+    "part", "sec", "section", "mandatory", "order", "orders", "rules", "rule",
+    "quality", "control", "product", "products", "item", "items"
 }
 
 def search_directory(query: str, division_filter: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -83,40 +79,40 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
         if lower_query in division and len(lower_query) > 3:
             score += 8.0
 
-        # Synonym exact / substring match
+        # Synonym exact / whole-word match
         for syn in synonyms:
             if syn == lower_query:
                 score += 12.0
-            elif len(lower_query) > 3 and (syn in lower_query or lower_query in syn):
+            elif re.search(rf'\b{re.escape(syn)}s?\b', lower_query):
                 score += 8.0
-            elif any(t in syn.split() for t in tokens if t not in STOP_WORDS):
+            elif any(re.search(rf'\b{re.escape(t)}\b', syn) for t in tokens if t not in STOP_WORDS and len(t) >= 4):
                 score += 3.0
 
         # Token overlap in title, is_code, and division
         for token in tokens:
             if token in STOP_WORDS:
                 continue
-            if token in title:
+            if re.search(rf'\b{re.escape(token)}\b', title):
                 score += 2.0
-            if token in is_code:
+            if re.search(rf'\b{re.escape(token)}\b', is_code):
                 score += 4.0
-            if token in division:
+            if re.search(rf'\b{re.escape(token)}\b', division):
                 score += 4.0
 
         # Fuzzy typo matching: catches 'electrnoics', 'hemlt', 'botle', 'batry', 'cemnt', etc.
         for token in tokens:
-            if len(token) >= 3 and token not in STOP_WORDS:
-                cutoff = 0.85 if len(token) <= 4 else (0.78 if len(token) <= 6 else 0.72)
+            if len(token) >= 4 and token not in STOP_WORDS:
+                cutoff = 0.78
                 # Check division words
                 for div_w in division.replace("&", " ").replace("(", " ").replace(")", " ").replace("/", " ").split():
-                    if len(div_w) >= 3 and SequenceMatcher(None, token, div_w).ratio() >= cutoff:
+                    if len(div_w) >= 4 and div_w not in STOP_WORDS and abs(len(token) - len(div_w)) <= 2 and SequenceMatcher(None, token, div_w).ratio() >= cutoff:
                         score += 7.0
                         break
                 # Check synonyms (break outer loop on match to prevent multiplying across synonym phrases)
                 syn_matched = False
                 for syn in synonyms:
                     for syn_w in syn.split():
-                        if len(syn_w) >= 3 and SequenceMatcher(None, token, syn_w).ratio() >= cutoff:
+                        if len(syn_w) >= 4 and syn_w not in STOP_WORDS and abs(len(token) - len(syn_w)) <= 2 and SequenceMatcher(None, token, syn_w).ratio() >= cutoff:
                             score += 7.0
                             syn_matched = True
                             break
@@ -124,7 +120,7 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
                         break
                 # Check title words
                 for title_w in title.replace("-", " ").replace(":", " ").replace("(", " ").replace(")", " ").replace("/", " ").split():
-                    if len(title_w) >= 3 and SequenceMatcher(None, token, title_w).ratio() >= cutoff:
+                    if len(title_w) >= 4 and title_w not in STOP_WORDS and abs(len(token) - len(title_w)) <= 2 and SequenceMatcher(None, token, title_w).ratio() >= cutoff:
                         score += 5.0
                         break
 

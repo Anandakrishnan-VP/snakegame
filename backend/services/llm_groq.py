@@ -348,3 +348,106 @@ def deterministic_synthesis(context_payload: Dict[str, Any], user_query: str, ta
         "evidence_tag": evidence,
         "provider": "deterministic-fallback"
     }
+
+def synthesize_web_fallback(
+    context_payload: Dict[str, Any],
+    user_query: str,
+    persona: str = "general",
+    target_lang: str = "en"
+) -> Dict[str, Any]:
+    """
+    Synthesizes a structured 4-part response for standards retrieved via Tier-2 Live Web Search.
+    Strictly grounded in official government portal snippets from bis.gov.in / standards.bis.gov.in.
+    """
+    evidence = context_payload.get("evidence_tag", {})
+    is_code = context_payload.get("is_code", "Official BIS Record")
+    doc_title = context_payload.get("title", "Indian Standard Specification")
+    snippet = context_payload.get("snippet", "")
+    source_url = context_payload.get("source_url", "https://www.bis.gov.in")
+    qco_status = context_payload.get("qco_status", "Mandatory")
+
+    # If Groq API key is available, synthesize with LLM
+    if GROQ_API_KEY and GROQ_API_KEY.strip():
+        try:
+            from groq import Groq
+            client = Groq(api_key=GROQ_API_KEY)
+
+            if persona == "consumer":
+                persona_guidance = """
+TARGET PERSONA: CONSUMER / CITIZEN
+- Focus on: Consumer protection, product safety, what to check on the box/item, and verifying the ISI mark / licence.
+- "next_action": Advise verifying the mark on the BIS Care App before buying.
+"""
+            else:
+                persona_guidance = """
+TARGET PERSONA: MSME / MANUFACTURER
+- Focus on: Statutory manufacturing compliance, applicable Quality Control Orders (QCOs), licensing on Manak Online, and test readiness.
+- "next_action": Advise checking the Scheme-I application procedure on Manak Online (www.manakonline.in) and testing at an accredited lab.
+"""
+
+            system_prompt = f"""You are BIS Saathi, an official assistant for the Bureau of Indian Standards (BIS).
+You are synthesizing an answer retrieved live from the official Bureau of Indian Standards government portal.
+
+{persona_guidance}
+
+CRITICAL RULES:
+1. Ground your response STRICTLY on the retrieved official BIS excerpt provided below.
+2. DO NOT hallucinate any facts, dates, or standards not present in the excerpt.
+3. Structure your response in the 4-part pattern as JSON:
+{{
+  "answer": "Concise statement identifying the standard {is_code}, product title, and regulatory status.",
+  "what_it_means": "Practical operational implications tailored to the persona.",
+  "next_action": "Concrete next step on official BIS portals."
+}}
+"""
+            user_prompt = f"""User Query: {user_query}
+
+Official BIS Portal Evidence:
+- Standard Code: {is_code}
+- Title: {doc_title}
+- Official Excerpt: {snippet}
+- Regulatory Status: {qco_status}
+- Source URL: {source_url}
+"""
+            completion = client.chat.completions.create(
+                model=GROQ_FAST_MODEL or "openai/gpt-oss-20b",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.1,
+                max_tokens=800,
+                response_format={"type": "json_object"}
+            )
+            parsed = json.loads(completion.choices[0].message.content)
+            return {
+                "answer": parsed.get("answer", f"According to official BIS records, {is_code} governs '{doc_title}'."),
+                "what_it_means": parsed.get("what_it_means", snippet),
+                "next_action": parsed.get("next_action", "Visit Manak Online (www.manakonline.in) to view certification requirements."),
+                "evidence_tag": evidence,
+                "persona": persona,
+                "source_type": "live_web",
+                "provider": "groq-web-fallback"
+            }
+        except Exception as e:
+            print(f"[WebFallback] Groq synthesis fallback error: {e}")
+
+    # Deterministic fallback if Groq is offline
+    if persona == "consumer":
+        ans = f"According to official BIS records, this product is governed by Indian Standard {is_code}: '{doc_title}'."
+        meaning = f"{snippet} Consumers should look for the official ISI mark alongside the manufacturer's licence number."
+        action = f"Verify standard specifications on the official BIS portal: {source_url}"
+    else:
+        ans = f"For MSMEs and manufacturers, the applicable Indian Standard is {is_code}: '{doc_title}' under {qco_status} certification."
+        meaning = f"{snippet} Compliance is regulated under BIS quality control guidelines."
+        action = f"Review the complete gazette order and test requirements on the official BIS portal: {source_url}"
+
+    return {
+        "answer": ans,
+        "what_it_means": meaning,
+        "next_action": action,
+        "evidence_tag": evidence,
+        "persona": persona,
+        "source_type": "live_web",
+        "provider": "deterministic-web-fallback"
+    }

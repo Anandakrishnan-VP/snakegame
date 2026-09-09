@@ -8,6 +8,7 @@ Performs deterministic attribute extraction across 4 categories:
 Boosts directory candidate ranking and handles single clarifying questions for ambiguous QCO status.
 """
 
+import re
 from typing import Dict, Any, List, Optional
 from difflib import SequenceMatcher
 from backend.services.module1_directory import search_directory
@@ -61,7 +62,7 @@ ACTIVITY_DICT = {
 }
 
 def extract_attributes(query: str) -> Dict[str, Optional[str]]:
-    """Extracts 4 attributes from natural language query deterministically."""
+    """Extracts 4 attributes from natural language query deterministically using regex word boundaries."""
     lower_query = query.lower()
     extracted = {
         "category": None,
@@ -70,9 +71,9 @@ def extract_attributes(query: str) -> Dict[str, Optional[str]]:
         "activity": None
     }
 
-    # 1. Category extraction (exact + fuzzy typo tolerance)
+    # 1. Category extraction (exact word boundary + fuzzy typo tolerance)
     for cat_name, synonyms in CATEGORY_DICT.items():
-        if any(syn in lower_query for syn in synonyms):
+        if any(re.search(rf'\b{re.escape(syn)}s?\b', lower_query) for syn in synonyms):
             extracted["category"] = cat_name
             break
         # Fuzzy fallback for typos like 'electrnoics', 'hemlt', 'botle', 'batry'
@@ -89,9 +90,9 @@ def extract_attributes(query: str) -> Dict[str, Optional[str]]:
         if extracted["category"]:
             break
 
-    # 2. Material extraction (exact + fuzzy typo tolerance)
+    # 2. Material extraction (exact word boundary + fuzzy typo tolerance)
     for mat_name, synonyms in MATERIAL_DICT.items():
-        if any(syn in lower_query for syn in synonyms):
+        if any(re.search(rf'\b{re.escape(syn)}\b', lower_query) for syn in synonyms):
             extracted["material"] = mat_name
             break
         matched = False
@@ -107,15 +108,15 @@ def extract_attributes(query: str) -> Dict[str, Optional[str]]:
         if extracted["material"]:
             break
 
-    # 3. User context extraction
+    # 3. User context extraction (exact word boundary)
     for ctx_name, synonyms in USER_CONTEXT_DICT.items():
-        if any(syn in lower_query for syn in synonyms):
+        if any(re.search(rf'\b{re.escape(syn)}\b', lower_query) for syn in synonyms):
             extracted["user_context"] = ctx_name
             break
 
-    # 4. Activity extraction
+    # 4. Activity extraction (exact word boundary)
     for act_name, synonyms in ACTIVITY_DICT.items():
-        if any(syn in lower_query for syn in synonyms):
+        if any(re.search(rf'\b{re.escape(syn)}\b', lower_query) for syn in synonyms):
             extracted["activity"] = act_name
             break
 
@@ -124,16 +125,17 @@ def extract_attributes(query: str) -> Dict[str, Optional[str]]:
 def match_product_to_standard(query: str) -> Dict[str, Any]:
     """
     Combines attribute extraction with directory search to recommend standards.
-    Applies scoring boosts and detects QCO ambiguity.
+    Applies scoring boosts and enforces confidence threshold gate before declaring local match.
     """
     attributes = extract_attributes(query)
     candidates = search_directory(query)
 
     if not candidates:
-        # Fallback: search using extracted category + material keywords if direct search gave no hits
-        fallback_query = " ".join([v for v in attributes.values() if v])
-        if fallback_query:
-            candidates = search_directory(fallback_query)
+        # Fallback: search using ONLY extracted category + material keywords if direct search gave no hits
+        # (DO NOT search generic user_context like 'household' or activity like 'manufacture' as product queries)
+        product_terms = [attributes[k] for k in ("category", "material") if attributes.get(k)]
+        if product_terms:
+            candidates = search_directory(" ".join(product_terms))
 
     # Apply attribute boosts to candidate scores
     for cand in candidates:
@@ -169,9 +171,23 @@ def match_product_to_standard(query: str) -> Dict[str, Any]:
             elif not attributes["material"]:
                 clarifying_question = f"What is the primary material composition of this product (e.g., stainless steel, plastic, or composite)?"
 
+    # Confidence Threshold Gate:
+    # A candidate must have at least 15.0 points (strong match), OR have an explicit category match (attribute_boost from category >= 10.0).
+    # Weak accidental overlaps (e.g. stopword overlap or context-only boost)
+    # are NOT accepted as valid local standards, allowing clean fallback to Tier-2 Web Search.
+    primary_candidate = None
+    if candidates:
+        top_cand = candidates[0]
+        has_category_match = bool(attributes["category"] and (
+            attributes["category"] in top_cand["title"].lower() or 
+            attributes["category"] in top_cand["synonyms"].lower()
+        ))
+        if top_cand["score"] >= 15.0 or has_category_match:
+            primary_candidate = top_cand
+
     return {
         "attributes": attributes,
-        "primary_match": candidates[0] if candidates else None,
+        "primary_match": primary_candidate,
         "all_candidates": candidates[:5],
         "clarifying_question": clarifying_question,
         "evidence_summary": {
