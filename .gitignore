@@ -19,3 +19,10 @@ env/
 Thumbs.db
 .vscode/
 .idea/
+
+# SQLite runtime databases — never commit these.
+# They contain cached query results from local test sessions
+# that would contaminate other users' environments on pull.
+*.db
+*.sqlite
+*.sqlite3

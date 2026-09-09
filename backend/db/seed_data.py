@@ -33,7 +33,7 @@ STANDARDS_SEED = [
         "qco_status": "Mandatory",
         "qco_reference": "MeitY Compulsory Registration Scheme (CRO Order Phase-II & III)",
         "related_standards": "IS 13252 (Part 1):2010, IEC 62133-2:2017",
-        "synonyms": "lithium ion battery, power bank, mobile battery, laptop battery, rechargeable battery, li-ion cell, ev battery cell, portable battery pack",
+        "synonyms": "lithium ion battery, power bank, mobile battery, laptop battery, rechargeable battery, li-ion cell, ev battery cell, portable battery pack, electronic battery, electronics",
         "source_url": "https://www.crsbis.in/BIS/product-category.do"
     },
     {
@@ -43,7 +43,7 @@ STANDARDS_SEED = [
         "qco_status": "Mandatory",
         "qco_reference": "MeitY Electronics & IT Goods (Requirements for Compulsory Registration) Order, 2012",
         "related_standards": "IS 16046 (Part 2):2018, IEC 60950-1",
-        "synonyms": "laptop, computer, tablet, pos terminal, electronic cash register, it equipment, server, notebook, wifi router",
+        "synonyms": "electronics, electronic goods, consumer electronics, electronic devices, it goods, laptop, computer, tablet, pos terminal, electronic cash register, it equipment, server, notebook, wifi router",
         "source_url": "https://www.crsbis.in/BIS/about-crs.do"
     },
     {

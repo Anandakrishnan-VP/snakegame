@@ -65,7 +65,14 @@ export default function App() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      height: activeTab === 'chat' ? '100vh' : 'auto',
+      minHeight: '100vh',
+      maxHeight: activeTab === 'chat' ? '100vh' : 'none',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: activeTab === 'chat' ? 'hidden' : 'visible'
+    }}>
       {/* Top Navbar */}
       <header style={{
         backgroundColor: 'rgba(7, 9, 14, 0.85)',
@@ -73,7 +80,8 @@ export default function App() {
         borderBottom: '1px solid var(--border-subtle)',
         position: 'sticky',
         top: 0,
-        zIndex: 100
+        zIndex: 100,
+        flexShrink: 0
       }}>
         <div style={{
           maxWidth: '1280px',
@@ -222,9 +230,25 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '24px 20px', maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
+      <main style={{
+        flex: 1,
+        padding: activeTab === 'chat' ? '10px 20px 14px 20px' : '24px 20px',
+        maxWidth: activeTab === 'chat' ? '1100px' : '1280px',
+        margin: '0 auto',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        overflow: activeTab === 'chat' ? 'hidden' : 'visible'
+      }}>
         {/* Chat tab is kept mounted so navigating away and returning preserves chat conversation */}
-        <div style={{ display: activeTab === 'chat' ? 'block' : 'none', height: 'calc(100vh - 140px)', minHeight: '620px' }}>
+        <div style={{
+          display: activeTab === 'chat' ? 'flex' : 'none',
+          flexDirection: 'column',
+          height: '100%',
+          flex: 1,
+          minHeight: 0
+        }}>
           <ChatView
             onInspectEvidence={handleInspectEvidence}
             onOpenVoice={() => setIsVoiceModalOpen(true)}

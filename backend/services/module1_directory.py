@@ -4,11 +4,12 @@ Provides deterministic keyword and synonym matching across Indian Standards.
 """
 
 from typing import List, Dict, Any, Optional
+from difflib import SequenceMatcher
 from backend.db.database import get_db_connection
 
 def search_directory(query: str, division_filter: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Matches query against is_code, title, and synonyms.
+    Matches query against is_code, title, division, and synonyms with fuzzy typo tolerance.
     Returns ranked list of candidate standards.
     """
     if not query or not query.strip():
@@ -41,7 +42,8 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
         score = 0.0
         is_code = row["is_code"].lower()
         title = row["title"].lower()
-        synonyms = [s.strip().lower() for s in row["synonyms"].split(",") if s.strip()]
+        division = (row["division"] or "").lower()
+        synonyms = [s.strip().lower() for s in (row["synonyms"] or "").split(",") if s.strip()]
 
         # Exact IS code match
         if is_code in lower_query or lower_query in is_code:
@@ -51,7 +53,11 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
         if lower_query in title:
             score += 10.0
 
-        # Synonym exact match
+        # Exact division match
+        if lower_query in division:
+            score += 8.0
+
+        # Synonym exact / substring match
         for syn in synonyms:
             if syn == lower_query:
                 score += 12.0
@@ -60,12 +66,35 @@ def search_directory(query: str, division_filter: Optional[str] = None) -> List[
             elif any(t in syn for t in tokens):
                 score += 3.0
 
-        # Token overlap in title
+        # Token overlap in title, is_code, and division
         for token in tokens:
             if token in title:
                 score += 2.0
             if token in is_code:
                 score += 4.0
+            if token in division:
+                score += 4.0
+
+        # Fuzzy typo matching: catches 'electrnoics', 'hemlt', 'botle', 'batry', 'cemnt', etc.
+        for token in tokens:
+            if len(token) >= 3:
+                cutoff = 0.68 if len(token) <= 5 else 0.75
+                # Check division words
+                for div_w in division.replace("&", " ").replace("(", " ").replace(")", " ").replace("/", " ").split():
+                    if len(div_w) >= 3 and SequenceMatcher(None, token, div_w).ratio() >= cutoff:
+                        score += 7.0
+                        break
+                # Check synonyms
+                for syn in synonyms:
+                    for syn_w in syn.split():
+                        if len(syn_w) >= 3 and SequenceMatcher(None, token, syn_w).ratio() >= cutoff:
+                            score += 7.0
+                            break
+                # Check title words
+                for title_w in title.replace("-", " ").replace(":", " ").replace("(", " ").replace(")", " ").replace("/", " ").split():
+                    if len(title_w) >= 3 and SequenceMatcher(None, token, title_w).ratio() >= cutoff:
+                        score += 5.0
+                        break
 
         if score > 0:
             related_list = [r.strip() for r in (row["related_standards"] or "").split(",") if r.strip()]

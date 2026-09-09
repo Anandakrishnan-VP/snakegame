@@ -4,6 +4,7 @@ Implements complete 8-step request lifecycle, compliance chain, verification, an
 """
 
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -123,7 +124,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 class ChatRequest(BaseModel):
     query: str
     session_id: Optional[str] = None
-    persona: Optional[str] = "general" # 'consumer', 'msme', 'general'
+    persona: Optional[str] = None # 'consumer', 'msme', 'general' (defaults to session persona if None)
     language: Optional[str] = "auto" # 'auto', 'en', 'hi'
     city: Optional[str] = None
     state: Optional[str] = None
@@ -198,6 +199,38 @@ def api_clause(chunk_id: str):
         raise HTTPException(status_code=404, detail="Clause chunk not found")
     return dict(row)
 
+def augment_query_if_followup(query: str, active_topic: Optional[str]) -> str:
+    """
+    Intelligently augments queries with active topic ONLY for pronouns or follow-up inquiries.
+    Prevents new product inquiries or typos (e.g. 'electrnoics') from being polluted
+    with previous unrelated session topics (e.g. helmets).
+    """
+    if not active_topic:
+        return query
+
+    lower = query.lower().strip()
+
+    # 1. Anaphora / Pronoun check: explicit reference to previous topic
+    if re.search(r'\b(?:it|its|this|that|these|them|the product|the item|the standard|the licence|the license|the lab|the labs|the steps|same|above|here|there)\b', lower):
+        return f"{active_topic} {query}"
+
+    # 2. Check if the query on its own matches a standard in the directory with decent score
+    # (e.g. user typed "electronics", "electrnoics", "water bottle", "cement", "IS 9873")
+    candidates = search_directory(query)
+    if candidates and candidates[0]["score"] >= 5.0:
+        return query
+
+    # 3. If query is a general procedural question without a product (e.g., "where is the testing lab in mumbai?", "how to get certified?", "what is the fee structure?")
+    if re.search(r'\b(?:where is the lab|testing lab in|how to apply|what are the fees|how much does it cost|timeline|process|steps|procedure|validity)\b', lower):
+        return f"{active_topic} {query}"
+
+    # If the query contains substantive word(s) that didn't match, keep it clean so matcher handles it
+    tokens = [t for t in lower.split() if len(t) >= 4]
+    if tokens:
+        return query
+
+    return f"{active_topic} {query}"
+
 @app.post("/api/chat")
 def api_chat(req: ChatRequest):
     """
@@ -266,10 +299,7 @@ def api_chat(req: ChatRequest):
     intent = routing_result["intent"]
 
     # Step 6: Active-Topic Augmentation for pronouns / follow-ups
-    augmented_query = english_query
-    if active_topic:
-        # Unconditionally prepend active topic to improve retrieval context
-        augmented_query = f"{active_topic} {english_query}"
+    augmented_query = augment_query_if_followup(english_query, active_topic)
 
     # Step 7: Modular Execution
     resolved_standard_code = active_topic

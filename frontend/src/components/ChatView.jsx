@@ -247,7 +247,7 @@ export default function ChatView({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '100%', maxWidth: '960px', margin: '0 auto', width: '100%', minHeight: 0 }}>
       {/* Header Bar Controls */}
       <div style={{
         display: 'flex',
@@ -255,11 +255,12 @@ export default function ChatView({
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '12px',
-        padding: '12px 18px',
+        padding: '10px 18px',
         background: 'var(--bg-glass)',
         borderBottom: '1px solid var(--border-subtle)',
         borderRadius: '12px 12px 0 0',
-        backdropFilter: 'blur(12px)'
+        backdropFilter: 'blur(12px)',
+        flexShrink: 0
       }}>
         {/* Active Topic Tag */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -285,115 +286,41 @@ export default function ChatView({
           )}
         </div>
 
-        {/* Persona & Language Selectors */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* Persona Toggle */}
-          <div style={{
-            display: 'inline-flex',
-            background: 'rgba(0, 0, 0, 0.3)',
-            borderRadius: '8px',
-            padding: '2px',
-            border: '1px solid var(--border-subtle)'
-          }}>
-            <button
-              onClick={() => setPersona('msme')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: 'none',
-                background: persona === 'msme' ? 'var(--accent-saffron)' : 'transparent',
-                color: persona === 'msme' ? '#fff' : 'var(--text-secondary)',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              <Building2 size={13} /> {t('persona_msme')}
-            </button>
-            <button
-              onClick={() => setPersona('consumer')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: 'none',
-                background: persona === 'consumer' ? 'var(--accent-saffron)' : 'transparent',
-                color: persona === 'consumer' ? '#fff' : 'var(--text-secondary)',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              <Users size={13} /> {t('persona_consumer')}
-            </button>
-          </div>
-
-          {/* Language Selector in Chat Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Globe size={14} color="var(--accent-saffron)" />
-            <select
-              value={currentLang}
-              onChange={(e) => setCurrentLang && setCurrentLang(e.target.value)}
-              style={{
-                padding: '4px 8px',
-                borderRadius: '6px',
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid var(--border-subtle)',
-                color: '#fff',
-                fontSize: '0.78rem',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              {SUPPORTED_LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code} style={{ background: '#0b0f19', color: '#fff' }}>
-                  {l.native} ({l.label})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* New / Reset Chat Button */}
-          <button
-            onClick={handleResetChat}
-            title="Clear chat and start fresh"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '4px 10px',
-              borderRadius: '6px',
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--text-muted)',
-              fontSize: '0.78rem',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#fff';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-muted)';
-              e.currentTarget.style.borderColor = 'var(--border-subtle)';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-            }}
-          >
-            <RotateCcw size={13} /> New Chat
-          </button>
-        </div>
+        {/* New / Reset Chat Button */}
+        <button
+          onClick={handleResetChat}
+          title="Clear chat and start fresh"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '5px 12px',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.06)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-muted)',
+            fontSize: '0.78rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#fff';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-muted)';
+            e.currentTarget.style.borderColor = 'var(--border-subtle)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+          }}
+        >
+          <RotateCcw size={13} /> New Chat
+        </button>
       </div>
 
       {/* Messages Scroll Area */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {messages.map((msg) => (
           <div key={msg.id} className="animate-fade-in" style={{
             display: 'flex',
@@ -669,86 +596,232 @@ export default function ChatView({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Prompt Chips */}
-      <div style={{ padding: '8px 18px', display: 'flex', gap: '8px', overflowX: 'auto', background: 'rgba(0, 0, 0, 0.2)' }}>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', alignSelf: 'center', whiteSpace: 'nowrap' }}>{t('quick_prompt_title')}</span>
-        {quickPrompts.map((qp, idx) => (
-          <button
-            key={idx}
-            onClick={() => sendMessage(qp.query)}
-            style={{
-              whiteSpace: 'nowrap',
-              fontSize: '0.78rem',
-              padding: '4px 12px',
-              borderRadius: '9999px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {qp.label}
-          </button>
-        ))}
-      </div>
+      {/* Bottom Area: Controls, Quick Prompts, Input */}
+      <div style={{
+        flexShrink: 0,
+        background: 'var(--bg-glass)',
+        borderTop: '1px solid var(--border-subtle)',
+        borderRadius: '0 0 12px 12px',
+        backdropFilter: 'blur(16px)',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Row 1: Controls Toolbar (Persona Switcher & Language Selector) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          padding: '8px 16px 6px 16px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+        }}>
+          {/* Persona Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Mode:
+            </span>
+            <div style={{
+              display: 'inline-flex',
+              background: 'rgba(0, 0, 0, 0.35)',
+              borderRadius: '8px',
+              padding: '2px',
+              border: '1px solid var(--border-subtle)'
+            }}>
+              <button
+                type="button"
+                onClick={() => setPersona('msme')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: persona === 'msme'
+                    ? 'linear-gradient(135deg, var(--accent-saffron) 0%, #ea580c 100%)'
+                    : 'transparent',
+                  color: persona === 'msme' ? '#fff' : 'var(--text-secondary)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: persona === 'msme' ? '0 2px 8px rgba(249, 115, 22, 0.3)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Building2 size={13} /> {t('persona_msme')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPersona('consumer')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: persona === 'consumer'
+                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    : 'transparent',
+                  color: persona === 'consumer' ? '#fff' : 'var(--text-secondary)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: persona === 'consumer' ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Users size={13} /> {t('persona_consumer')}
+              </button>
+            </div>
+          </div>
 
-      {/* Input Bar */}
-      <div style={{ padding: '16px', background: 'var(--bg-glass)', borderTop: '1px solid var(--border-subtle)', borderRadius: '0 0 12px 12px' }}>
-        <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={onOpenVoice}
-            title={t('chat_listening')}
-            style={{
-              padding: '12px',
-              borderRadius: '10px',
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--accent-saffron)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Mic size={20} />
-          </button>
+          {/* Language Selector Dropdown */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(0, 0, 0, 0.35)',
+            padding: '4px 10px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-subtle)'
+          }}>
+            <Globe size={14} color="var(--accent-saffron)" />
+            <select
+              value={currentLang}
+              onChange={(e) => setCurrentLang && setCurrentLang(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {SUPPORTED_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code} style={{ background: '#0b0f19', color: '#fff' }}>
+                  {l.native} ({l.label})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-          <input
-            type="text"
-            value={inputQuery}
-            onChange={(e) => setInputQuery(e.target.value)}
-            placeholder={
-              persona === 'consumer'
-                ? t('chat_placeholder_consumer')
-                : t('chat_placeholder_msme')
-            }
-            style={{
-              flex: 1,
-              padding: '14px 18px',
-              backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '10px',
-              color: '#fff',
-              fontSize: '0.95rem',
-              outline: 'none'
-            }}
-          />
+        {/* Row 2: Quick Prompts Chips Carousel */}
+        <div style={{
+          padding: '6px 16px',
+          display: 'flex',
+          gap: '8px',
+          overflowX: 'auto',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontWeight: 500 }}>
+            {t('quick_prompt_title')}
+          </span>
+          {quickPrompts.map((qp, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => sendMessage(qp.query)}
+              style={{
+                whiteSpace: 'nowrap',
+                fontSize: '0.75rem',
+                padding: '3px 10px',
+                borderRadius: '9999px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.4)';
+                e.currentTarget.style.color = '#fff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+            >
+              {qp.label}
+            </button>
+          ))}
+        </div>
 
-          <button
-            type="submit"
-            disabled={!inputQuery.trim() || loading}
-            className="btn-primary"
-            style={{ padding: '14px 22px', borderRadius: '10px', opacity: !inputQuery.trim() || loading ? 0.6 : 1 }}
-          >
-            <Send size={18} />
-          </button>
-        </form>
+        {/* Row 3: Input Form */}
+        <div style={{ padding: '6px 16px 12px 16px' }}>
+          <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={onOpenVoice}
+              title={t('chat_listening')}
+              style={{
+                padding: '11px',
+                borderRadius: '10px',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--accent-saffron)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(249, 115, 22, 0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              }}
+            >
+              <Mic size={19} />
+            </button>
 
-        <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-          {t('chat_disclaimer')}
-        </p>
+            <input
+              type="text"
+              value={inputQuery}
+              onChange={(e) => setInputQuery(e.target.value)}
+              placeholder={
+                persona === 'consumer'
+                  ? t('chat_placeholder_consumer')
+                  : t('chat_placeholder_msme')
+              }
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '10px',
+                color: '#fff',
+                fontSize: '0.92rem',
+                outline: 'none',
+                transition: 'border-color 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--accent-saffron)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-subtle)';
+              }}
+            />
+
+            <button
+              type="submit"
+              disabled={!inputQuery.trim() || loading}
+              className="btn-primary"
+              style={{ padding: '12px 20px', borderRadius: '10px', opacity: !inputQuery.trim() || loading ? 0.6 : 1 }}
+            >
+              <Send size={18} />
+            </button>
+          </form>
+
+          <p style={{ margin: '6px 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+            {t('chat_disclaimer')}
+          </p>
+        </div>
       </div>
     </div>
   );

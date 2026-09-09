@@ -9,6 +9,7 @@ Boosts directory candidate ranking and handles single clarifying questions for a
 """
 
 from typing import Dict, Any, List, Optional
+from difflib import SequenceMatcher
 from backend.services.module1_directory import search_directory
 
 # Curated Attribute Dictionaries per §6.1
@@ -24,7 +25,8 @@ CATEGORY_DICT = {
     "steel": ["steel", "rebar", "saria", "tmt", "structural steel", "iron rod"],
     "cable": ["wire", "cable", "cord", "wiring", "conductor"],
     "footwear": ["shoe", "shoes", "footwear", "sneakers", "boots", "sandals"],
-    "appliance": ["iron", "press", "heater", "geyser", "toaster", "blender"]
+    "appliance": ["iron", "press", "heater", "geyser", "toaster", "blender"],
+    "electronics": ["electronics", "electronic", "it equipment", "computer", "laptop", "tablet", "mobile", "gadget", "router", "server", "crs", "information technology", "electronic goods"]
 }
 
 MATERIAL_DICT = {
@@ -62,16 +64,41 @@ def extract_attributes(query: str) -> Dict[str, Optional[str]]:
         "activity": None
     }
 
-    # 1. Category extraction
+    # 1. Category extraction (exact + fuzzy typo tolerance)
     for cat_name, synonyms in CATEGORY_DICT.items():
         if any(syn in lower_query for syn in synonyms):
             extracted["category"] = cat_name
             break
+        # Fuzzy fallback for typos like 'electrnoics', 'hemlt', 'botle', 'batry'
+        matched = False
+        for token in lower_query.split():
+            if len(token) >= 4:
+                for syn in synonyms:
+                    if len(syn) >= 4 and SequenceMatcher(None, token, syn).ratio() >= 0.78:
+                        extracted["category"] = cat_name
+                        matched = True
+                        break
+            if matched:
+                break
+        if extracted["category"]:
+            break
 
-    # 2. Material extraction
+    # 2. Material extraction (exact + fuzzy typo tolerance)
     for mat_name, synonyms in MATERIAL_DICT.items():
         if any(syn in lower_query for syn in synonyms):
             extracted["material"] = mat_name
+            break
+        matched = False
+        for token in lower_query.split():
+            if len(token) >= 4:
+                for syn in synonyms:
+                    if len(syn) >= 4 and SequenceMatcher(None, token, syn).ratio() >= 0.78:
+                        extracted["material"] = mat_name
+                        matched = True
+                        break
+            if matched:
+                break
+        if extracted["material"]:
             break
 
     # 3. User context extraction
