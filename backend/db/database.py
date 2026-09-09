@@ -119,12 +119,9 @@ def get_db_connection():
 def init_db(force_reseed: bool = False):
     """Initializes schema and seeds all tables for the active database engine."""
     if is_postgres_configured():
-        try:
-            from scripts.migrate_to_supabase import migrate
-            migrate()
-            return
-        except Exception as e:
-            print(f"Postgres migration check: {e}")
+        # Supabase/PostgreSQL is persistent and managed remotely via scripts/migrate_to_supabase.py.
+        # Avoid running heavy migrations during the serverless request lifecycle or cold starts.
+        return
 
     # Fallback / Local SQLite initialization
     conn = get_db_connection()

@@ -98,6 +98,16 @@ app.add_middleware(
 def startup_event():
     init_db()
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    err_trace = traceback.format_exc()
+    print(f"Unhandled exception on {request.url.path}: {err_trace}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)}
+    )
+
 # Request/Response Schemas
 class ChatRequest(BaseModel):
     query: str
