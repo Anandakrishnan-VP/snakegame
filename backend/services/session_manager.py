@@ -13,10 +13,11 @@ def normalize_text(text: str) -> str:
     """Normalizes whitespace and lowercases query string for hashing."""
     return re.sub(r'\s+', ' ', text.strip().lower())
 
-def make_cache_key(query: str, language: str) -> str:
-    """Creates a SHA256 composite cache key from normalized text and resolved language."""
+def make_cache_key(query: str, language: str, persona: str = "general") -> str:
+    """Creates a SHA256 composite cache key from normalized text, resolved language, and persona."""
     norm = normalize_text(query)
-    raw = f"{norm}::{language.lower().strip()}"
+    persona_norm = (persona or "general").lower().strip()
+    raw = f"{norm}::{language.lower().strip()}::{persona_norm}"
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
 def get_or_create_session(session_id: str, persona: str = "general", language: str = "en") -> Dict[str, Any]:
@@ -112,12 +113,12 @@ def update_session(
     conn.commit()
     conn.close()
 
-def check_cache(query: str, language: str) -> Optional[Tuple[Dict[str, Any], Optional[str]]]:
+def check_cache(query: str, language: str, persona: str = "general") -> Optional[Tuple[Dict[str, Any], Optional[str]]]:
     """
-    Checks cache for normalized query and language.
+    Checks cache for normalized query, language, and persona.
     Returns (response_dict, active_topic) or None.
     """
-    cache_key = make_cache_key(query, language)
+    cache_key = make_cache_key(query, language, persona=persona)
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -133,9 +134,16 @@ def check_cache(query: str, language: str) -> Optional[Tuple[Dict[str, Any], Opt
             return None
     return None
 
-def write_cache(query: str, language: str, response_data: Dict[str, Any], active_topic: Optional[str] = None):
-    """Writes synthesized response to query_cache with composite key."""
-    cache_key = make_cache_key(query, language)
+def write_cache(query: str, language: str, response_data: Dict[str, Any], active_topic: Optional[str] = None, persona: str = "general"):
+    """Writes synthesized response to query_cache with composite key (never caches refusals)."""
+    if not response_data or response_data.get("guardrail_refusal") or response_data.get("out_of_scope"):
+        return
+    if response_data.get("provider") == "guardrail-engine":
+        return
+    if response_data.get("evidence_tag", {}).get("status") == "not determined":
+        return
+
+    cache_key = make_cache_key(query, language, persona=persona)
     conn = get_db_connection()
     cursor = conn.cursor()
 

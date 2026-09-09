@@ -113,11 +113,73 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
         </div>
       </div>
 
+      {/* Result Status & Reset */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          {loading ? 'Searching laboratories...' : (
+            <>
+              Showing <strong style={{ color: '#fff' }}>{labs.length}</strong> {labs.length === 1 ? 'laboratory' : 'laboratories'} {city && city !== 'All Cities' ? <>for <strong style={{ color: 'var(--accent-saffron)' }}>{city}</strong></> : 'across India'}
+            </>
+          )}
+        </span>
+        {((city && city !== 'All Cities') || selectedStandard) && (
+          <button
+            onClick={() => { setCity('All Cities'); setSelectedStandard(''); }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
+      {/* Empty State */}
+      {!loading && labs.length === 0 && (
+        <div className="glass-card" style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <FlaskConical size={38} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+          <p style={{ margin: 0, fontSize: '1.05rem', color: '#fff', fontWeight: 600 }}>No Testing Laboratories Found</p>
+          <p style={{ margin: '8px 0 16px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            No accredited lab matches your chosen standard and city filter.
+          </p>
+          <button
+            onClick={() => { setCity('All Cities'); setSelectedStandard(''); }}
+            className="btn-primary"
+            style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+          >
+            Show All Laboratories
+          </button>
+        </div>
+      )}
+
       {/* Labs List */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: '16px' }}>
         {labs.map((lab) => (
           <div key={lab.lab_id} className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
+              {lab.fallback_note && (
+                <div style={{
+                  fontSize: '0.78rem',
+                  color: '#fbbf24',
+                  background: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  lineHeight: '1.3'
+                }}>
+                  <span>📍</span> {lab.fallback_note}
+                </div>
+              )}
+
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' }}>
                 <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#fff' }}>{lab.lab_name}</h4>
                 <span style={{

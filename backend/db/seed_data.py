@@ -205,6 +205,26 @@ STANDARDS_SEED = [
         "related_standards": "IS 16102 (Part 1):2012, IEC 61347-2-13",
         "synonyms": "led driver, led power supply, led ballast, electronic controlgear, constant current led driver",
         "source_url": "https://www.crsbis.in/BIS/product-category.do"
+    },
+    {
+        "is_code": "IS 6911:2017",
+        "title": "Stainless Steel Plate, Sheet and Strip - Specification",
+        "division": "Metallurgical Engineering (MTD)",
+        "qco_status": "Mandatory",
+        "qco_reference": "Stainless Steel and Nickel Alloy (Quality Control) Order, 2020",
+        "related_standards": "IS 17803:2022, IS 5522:2014",
+        "synonyms": "stainless steel sheet, stainless steel plate, grade 304, grade 316, food grade stainless steel, raw material steel",
+        "source_url": "https://www.bis.gov.in/qco-stainless-steel-2020"
+    },
+    {
+        "is_code": "IS 5522:2014",
+        "title": "Stainless Steel Sheets and Strips for Utensils - Specification",
+        "division": "Metallurgical Engineering (MTD)",
+        "qco_status": "Mandatory",
+        "qco_reference": "Stainless Steel and Nickel Alloy (Quality Control) Order, 2020",
+        "related_standards": "IS 17803:2022, IS 6911:2017",
+        "synonyms": "stainless steel utensils, utensil sheet, kitchenware steel, steel containers",
+        "source_url": "https://www.bis.gov.in/qco-stainless-steel-2020"
     }
 ]
 

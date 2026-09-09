@@ -61,8 +61,43 @@ def check_pre_retrieval_guardrails(query: str, language: str = "en") -> Tuple[bo
 
     return True, None
 
-def generate_refusal_response(reason: str, language: str = "en") -> Dict[str, Any]:
+def generate_refusal_response(reason: str, language: str = "en", is_grounding_issue: bool = False) -> Dict[str, Any]:
     """Generates an honest, polite, and grounded refusal conforming to the 4-part schema."""
+    if is_grounding_issue:
+        if language == "hi":
+            return {
+                "answer": "क्षमा करें, इस उत्पाद या मानक कोड का सत्यापन आधिकारिक बीआईएस डेटाबेस में नहीं हो सका।",
+                "what_it_means": f"उत्तर में उल्लिखित मानक आधिकारिक बीआईएस रिकॉर्ड में सत्यापित नहीं है ({reason})।",
+                "next_action": "कृपया उत्पाद का सही नाम, सामग्री या सटीक आईएस कोड पुनः दर्ज करें।",
+                "evidence_tag": {
+                    "source_type": "faq",
+                    "reference": "BIS Saathi Grounding Gatekeeper",
+                    "status": "not determined",
+                    "clause_number": "Grounding Boundary",
+                    "clause_summary": f"Refusal enforced: {reason}",
+                    "verbatim_excerpt": f"Refusal enforced: {reason}",
+                    "source_url": "https://www.bis.gov.in"
+                },
+                "guardrail_refusal": True,
+                "provider": "guardrail-engine"
+            }
+        return {
+            "answer": "I apologize, but the standard referenced could not be verified in the official BIS standards registry.",
+            "what_it_means": f"To prevent misinformation, unverified standards are intercepted ({reason}).",
+            "next_action": "Please refine your product description, primary materials, or provide a specific Indian Standard (IS) code.",
+            "evidence_tag": {
+                "source_type": "faq",
+                "reference": "BIS Saathi Grounding Gatekeeper",
+                "status": "not determined",
+                "clause_number": "Grounding Boundary",
+                "clause_summary": f"Refusal enforced: {reason}",
+                "verbatim_excerpt": f"Refusal enforced: {reason}",
+                "source_url": "https://www.bis.gov.in"
+            },
+            "guardrail_refusal": True,
+            "provider": "guardrail-engine"
+        }
+
     if language == "hi":
         return {
             "answer": "मैं बीआईएस साथी हूँ, और मैं केवल भारतीय मानकों (Indian Standards), बीआईएस प्रमाणन, हॉलमार्किंग और प्रयोगशाला परीक्षण से संबंधित आधिकारिक प्रश्नों के उत्तर देने के लिए अधिकृत हूँ।",
@@ -98,10 +133,17 @@ def generate_refusal_response(reason: str, language: str = "en") -> Dict[str, An
         "provider": "guardrail-engine"
     }
 
-def validate_post_llm_grounding(response_data: Dict[str, Any], language: str = "en") -> Dict[str, Any]:
+def validate_post_llm_grounding(
+    response_data: Dict[str, Any],
+    language: str = "en",
+    context_payload: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """
     Post-LLM Guardrail: Verifies that any Indian Standard mentioned in the generated answer
-    actually exists in the verified database. Replaces hallucinated standards with grounded refusal.
+    actually exists in the verified database or retrieved evidence.
+    If an unverified standard is mentioned:
+    - If context_payload has a verified standard, gracefully falls back to deterministic synthesis.
+    - Otherwise, provides a clear, grounded refusal without misclassifying legitimate queries as out-of-domain.
     """
     answer_text = response_data.get("answer", "")
     mentioned_codes = re.findall(r'\b(?:IS|is)\s*(\d{3,5})\b', answer_text)
@@ -109,20 +151,61 @@ def validate_post_llm_grounding(response_data: Dict[str, Any], language: str = "
     if not mentioned_codes:
         return response_data
 
+    # Build context string to check for valid references in retrieved evidence chunks
+    import json
+    evidence_text = ""
+    if context_payload:
+        try:
+            evidence_text += json.dumps(context_payload)
+        except Exception:
+            pass
+    if "evidence_tag" in response_data:
+        try:
+            evidence_text += json.dumps(response_data["evidence_tag"])
+        except Exception:
+            pass
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    unverified_codes = []
+
     for code_num in mentioned_codes:
-        cursor.execute("SELECT is_code FROM standards WHERE is_code LIKE ?", (f"%{code_num}%",))
-        row = cursor.fetchone()
-        if not row:
-            # The LLM generated a standard code that DOES NOT exist in the official DB!
-            conn.close()
-            print(f"[GUARDRAIL TRIPPED] LLM hallucinated unverified standard IS {code_num}. Intercepting.")
-            return generate_refusal_response(
-                reason=f"Generated response cited unverified standard IS {code_num} not present in official BIS registry.",
-                language=language
-            )
+        # Check 1: In evidence context / retrieved chunks directly?
+        if code_num in evidence_text:
+            continue
+
+        # Check 2: In standards table (is_code or related_standards)?
+        cursor.execute("SELECT is_code FROM standards WHERE is_code LIKE ? OR related_standards LIKE ?", (f"%{code_num}%", f"%{code_num}%"))
+        if cursor.fetchone():
+            continue
+
+        # Check 3: In standard_chunks table (verbatim clause citations)?
+        cursor.execute("SELECT chunk_id FROM standard_chunks WHERE content LIKE ? OR standard_id LIKE ?", (f"%{code_num}%", f"%{code_num}%"))
+        if cursor.fetchone():
+            continue
+
+        unverified_codes.append(code_num)
 
     conn.close()
-    return response_data
+
+    if not unverified_codes:
+        return response_data
+
+    # An unverified standard was mentioned by the LLM
+    print(f"[GUARDRAIL TRIPPED] LLM cited unverified standard code(s): {unverified_codes}.")
+
+    # If context has a valid verified standard, fall back to deterministic synthesis instead of refusing!
+    if context_payload and (context_payload.get("standard") or (context_payload.get("evidence_tag", {}).get("status") == "confirmed")):
+        from backend.services.llm_groq import deterministic_synthesis
+        print("[GUARDRAIL] Falling back to deterministic synthesis to preserve verified answer.")
+        fallback = deterministic_synthesis(context_payload, "", target_lang=language)
+        fallback["guardrail_intercepted"] = True
+        return fallback
+
+    # If no valid standard exists, return a specific grounded refusal
+    return generate_refusal_response(
+        reason=f"Generated response cited unverified standard IS {', '.join(unverified_codes)} not present in official BIS registry.",
+        language=language,
+        is_grounding_issue=True
+    )

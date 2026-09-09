@@ -150,6 +150,38 @@ def test_10_deterministic_failover():
     assert "9873" in res["evidence_tag"]["reference"]
     print("[PASS] Edge Case 10: Deterministic failover guarantees complete 4-part response")
 
+def test_11_persona_cache_and_response_isolation():
+    # Cache isolation between MSME and Consumer personas
+    query = "drinking water bottles standards"
+    msme_resp = {"answer": "MSME factory response", "persona": "msme"}
+    consumer_resp = {"answer": "Consumer safety response", "persona": "consumer"}
+
+    write_cache(query, "en", msme_resp, persona="msme")
+    write_cache(query, "en", consumer_resp, persona="consumer")
+
+    c_hit, _ = check_cache(query, "en", persona="consumer") or (None, None)
+    m_hit, _ = check_cache(query, "en", persona="msme") or (None, None)
+
+    assert c_hit is not None
+    assert c_hit["persona"] == "consumer"
+    assert "safety" in c_hit["answer"].lower()
+
+    assert m_hit is not None
+    assert m_hit["persona"] == "msme"
+    assert "factory" in m_hit["answer"].lower()
+
+    # Synthesis differences
+    mock_payload_consumer = run_compliance_chain("water bottles", persona="consumer")
+    mock_payload_msme = run_compliance_chain("water bottles", persona="msme")
+
+    c_synth = deterministic_synthesis(mock_payload_consumer, "water bottles", "en")
+    m_synth = deterministic_synthesis(mock_payload_msme, "water bottles", "en")
+
+    assert "consumer" in c_synth["what_it_means"].lower() or "buying" in c_synth["what_it_means"].lower() or "isi mark" in c_synth["what_it_means"].lower()
+    assert "factory" in m_synth["what_it_means"].lower() or "scheme" in m_synth["what_it_means"].lower() or "audit" in m_synth["what_it_means"].lower()
+
+    print("[PASS] Edge Case 11: Persona-aware cache and deterministic synthesis isolation")
+
 if __name__ == "__main__":
     test_1_directory_without_deep_clause()
     test_2_deep_clause_non_flagship_boundary()
@@ -161,4 +193,5 @@ if __name__ == "__main__":
     test_8_multilingual_cache_isolation()
     test_9_out_of_scope_rejection()
     test_10_deterministic_failover()
-    print("\nALL 10 SPECIFICATION §19 EDGE-CASE TESTS PASSED!")
+    test_11_persona_cache_and_response_isolation()
+    print("\nALL 11 SPECIFICATION & PERSONA EDGE-CASE TESTS PASSED!")

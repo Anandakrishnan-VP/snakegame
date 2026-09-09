@@ -223,24 +223,24 @@ export default function App() {
 
       {/* Main Content Area */}
       <main style={{ flex: 1, padding: '24px 20px', maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
-        {activeTab === 'chat' && (
-          <div style={{ height: 'calc(100vh - 140px)', minHeight: '620px' }}>
-            <ChatView
-              onInspectEvidence={handleInspectEvidence}
-              onOpenVoice={() => setIsVoiceModalOpen(true)}
-              onStartJourney={(standardCode) => {
-                setJourneyStandardId(standardCode);
-                setActiveTab('journey');
-              }}
-              voiceTranscript={voiceTranscript}
-              setVoiceTranscript={setVoiceTranscript}
-              initialQuery={initialChatQuery}
-              currentLang={currentLang}
-              setCurrentLang={setCurrentLang}
-              t={t}
-            />
-          </div>
-        )}
+        {/* Chat tab is kept mounted so navigating away and returning preserves chat conversation */}
+        <div style={{ display: activeTab === 'chat' ? 'block' : 'none', height: 'calc(100vh - 140px)', minHeight: '620px' }}>
+          <ChatView
+            onInspectEvidence={handleInspectEvidence}
+            onOpenVoice={() => setIsVoiceModalOpen(true)}
+            onStartJourney={(standardCode) => {
+              setJourneyStandardId(standardCode);
+              setActiveTab('journey');
+            }}
+            voiceTranscript={voiceTranscript}
+            setVoiceTranscript={setVoiceTranscript}
+            initialQuery={initialChatQuery}
+            onClearInitialQuery={() => setInitialChatQuery('')}
+            currentLang={currentLang}
+            setCurrentLang={setCurrentLang}
+            t={t}
+          />
+        </div>
 
         {activeTab === 'journey' && (
           <JourneyView

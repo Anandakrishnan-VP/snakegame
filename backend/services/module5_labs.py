@@ -50,23 +50,46 @@ def find_testing_labs(is_code: Optional[str] = None, city: Optional[str] = None,
         for r in rows
     ]
 
-    # Prioritize:
-    # 1. Exact city match
-    # 2. State match
-    # 3. Central lab (accepts samples nationwide)
-    # 4. Other regional labs
-    city_lower = city.lower().strip() if city else ""
-    state_lower = state.lower().strip() if state else ""
+    city_clean = city.strip() if city and city != "All Cities" else ""
+    state_clean = state.strip() if state and state != "All States" else ""
 
-    for lab in labs:
-        if city_lower and city_lower in lab["city"].lower():
-            lab["priority"] = 1
-        elif state_lower and state_lower in lab["state"].lower():
-            lab["priority"] = 2
-        elif lab["lab_type"] == "Central":
-            lab["priority"] = 2.5
-        else:
-            lab["priority"] = 4
+    if not city_clean and not state_clean:
+        # No location filter: return all labs, prioritizing Central then by city
+        labs.sort(key=lambda x: (0 if x["lab_type"] == "Central" else 1, x["city"]))
+        return labs
 
-    labs.sort(key=lambda x: x["priority"])
+    city_lower = city_clean.lower()
+    state_lower = state_clean.lower()
+
+    # Cascade Level 1: Direct city match
+    if city_lower:
+        city_matches = [l for l in labs if city_lower in l["city"].lower()]
+        if city_matches:
+            for l in city_matches:
+                l["priority"] = 1
+                l["match_level"] = "city"
+            return city_matches
+
+    # Cascade Level 2: State match
+    if state_lower:
+        state_matches = [l for l in labs if state_lower in l["state"].lower()]
+        if state_matches:
+            for l in state_matches:
+                l["priority"] = 2
+                l["match_level"] = "state"
+                if city_clean:
+                    l["fallback_note"] = f"No lab directly in {city_clean}; nearest recognized lab in {l['state']}"
+            return state_matches
+
+    # Cascade Level 3: Central Laboratory Fallback (CL Sahibabad accepts samples nationwide)
+    central_labs = [l for l in labs if l["lab_type"] == "Central"]
+    if central_labs:
+        for l in central_labs:
+            l["priority"] = 3
+            l["match_level"] = "central"
+            target_loc = city_clean or state_clean
+            l["fallback_note"] = f"No local lab in {target_loc}; samples can be submitted to BIS Central Laboratory (accepts nationwide samples)"
+        return central_labs
+
+    # If no central lab in standard map, return candidate labs
     return labs

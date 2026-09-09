@@ -55,16 +55,35 @@ def synthesize_with_groq(context_payload: Dict[str, Any], user_query: str, targe
         }
         target_lang_desc = INDIC_LANGUAGE_NAMES.get(target_lang, "English")
 
+        if persona == "consumer":
+            persona_directive = """
+TARGET PERSONA: CONSUMER / BUYER / CITIZEN
+- Primary Mission: Consumer safety, buyer protection, what to inspect on packaging, and licence verification.
+- "answer": State which Indian Standard protects consumers for this product, whether the ISI mark / Hallmark / CRS mark is legally mandatory on this item, and what consumer health/safety hazards it prevents.
+- "what_it_means": Explain what quality, health, and material safety guarantees the consumer receives (e.g., non-toxic food-grade materials, child safety, no electric shocks, fire safety). Crucially, explain what to look for on the product/box: the official ISI mark alongside the mandatory 7-digit CM/L licence number (or 6-character HUID for gold, or R-number for electronics).
+- "next_action": Provide a concrete buyer verification step: instruct the consumer to download the official BIS Care App and enter the 7-digit CM/L number to verify manufacturer authenticity before buying, or lodge a quality grievance on the BIS Care portal if substandard.
+"""
+        else:
+            persona_directive = """
+TARGET PERSONA: MSME / MANUFACTURER / STARTUP
+- Primary Mission: Industrial compliance, factory readiness, Scheme-I/CRS certification, and legal manufacturing roadmap.
+- "answer": State the exact Indian Standard, statutory Quality Control Order (QCO) gazette order, and whether compliance is mandatory before manufacturing, importing, or selling in India.
+- "what_it_means": Explain manufacturing and factory-level obligations: applicable certification scheme (Scheme-I ISI Mark or CRS), factory quality control audit readiness, in-house testing equipment requirements, raw material specifications, and legal liability under the BIS Act 2016. Explicitly highlight applicable MSME fee concessions (50% fee subsidy for Micro enterprises, 20% for Small & Startups).
+- "next_action": Provide a concrete manufacturer roadmap step: submit Form V on the BIS Manak Online portal (www.manakonline.in), upload the factory test equipment list, claim MSME fee concessions, and schedule sample prototype testing at a recognized lab.
+"""
+
         system_prompt = f"""You are BIS Saathi, an official AI assistant for the Bureau of Indian Standards (BIS).
 Your goal is to provide accurate, grounded, and source-backed guidance strictly on Indian Standards, certification schemes, testing laboratories, and consumer affairs.
+
+{persona_directive}
 
 CRITICAL GUARDRAIL RULES:
 1. STRICT GROUNDING: You are strictly an explanation interface. All facts, standard codes, clauses, and laboratory names MUST come directly from the official database context provided below. Do not invent, assume, or fabricate any facts outside the context.
 2. REFUSAL MANDATE: If the user asks about anything not contained in the retrieved context (e.g., non-BIS topics, financial advice, coding, general trivia, unverified products), you MUST explicitly state that no official BIS record was found and politely decline.
 3. Structure your reply strictly in the 4-Part Answer Pattern:
-   - answer: 1-2 plain-language sentences directly answering the user based only on the context.
-   - what_it_means: Simple translation of the standard or regulatory requirement for an MSME, startup, or consumer.
-   - next_action: One concrete, actionable step the user should take right now.
+   - answer: 1-2 plain-language sentences directly answering the user based only on the context and tailored to the persona.
+   - what_it_means: Clear explanation tailored to the target persona (manufacturing obligations & fee subsidies for MSME; packaging marks & health safety for Consumer).
+   - next_action: One concrete, actionable step the user should take right now (Form V on Manak Online for MSME; BIS Care App verification for Consumer).
 4. Language constraint: You MUST write the entire JSON response (answer, what_it_means, next_action) directly in {target_lang_desc}.
    CRITICAL PRESERVATION: PRESERVE all Indian Standard codes (e.g., 'IS 9873 (Part 1):2019', 'IS 17803:2022'), clause numbers, HUIDs, licence numbers (CM/L), and statutory QCO numbers (e.g., 'S.O. 853(E)') completely unromanized and unchanged.
 5. Output MUST be valid JSON conforming to:
@@ -75,13 +94,13 @@ CRITICAL GUARDRAIL RULES:
 }}
 """
 
-        user_prompt = f"""User Persona: {persona}
+        user_prompt = f"""Target Persona: {persona.upper()}
 User Query: {user_query}
 
 Retrieved Verified BIS Context:
 {json.dumps(context_payload, indent=2)}
 
-Please synthesize the response JSON based solely on this verified context."""
+Please synthesize the response JSON specifically tailored for this {persona.upper()} persona based solely on this verified context."""
 
         # Attempt candidate models in sequence
         candidate_models = get_candidate_models()
@@ -107,6 +126,7 @@ Please synthesize the response JSON based solely on this verified context."""
                     "what_it_means": parsed.get("what_it_means", ""),
                     "next_action": parsed.get("next_action", ""),
                     "evidence_tag": evidence,
+                    "persona": persona,
                     "provider": f"groq-{model_id}"
                 }
             except Exception as model_err:
@@ -177,6 +197,8 @@ def deterministic_synthesis(context_payload: Dict[str, Any], user_query: str, ta
             "provider": "deterministic-fallback"
         }
 
+    persona = context_payload.get("persona", "general")
+
     if standard:
         is_code = standard.get("is_code", "")
         title = standard.get("title", "")
@@ -185,20 +207,31 @@ def deterministic_synthesis(context_payload: Dict[str, Any], user_query: str, ta
 
         lab_summary = f"Testing is available at {labs[0]['lab_name']} ({labs[0]['city']})" if labs else "Samples can be tested at BIS Central Laboratory (CL Sahibabad)."
 
-        if target_lang == "hi":
-            ans = f"आपके उत्पाद के लिए लागू भारतीय मानक {is_code} ({title}) है। यह {qco} प्रमाणन के अंतर्गत आता है ({qco_ref})।"
-            meaning = f"यदि आप इस उत्पाद का भारत में निर्माण, आयात या विक्रय करते हैं, तो मानक {is_code} का अनुपालन अनिवार्य है। {lab_summary}"
-            action = f"मानक ऑनलाइन (www.manakonline.in) पर फॉर्म V भरकर आवेदन करें या नमूना परीक्षण हेतु अधिकृत प्रयोगशाला से संपर्क करें।"
+        if persona == "consumer":
+            if target_lang == "hi":
+                ans = f"उपभोक्ता सुरक्षा हेतु, इस उत्पाद के लिए भारतीय मानक {is_code} ({title}) निर्धारित है। यह {qco} प्रमाणन के अंतर्गत आता है।"
+                meaning = f"यह मानक सुनिश्चित करता है कि उत्पाद विषैले तत्वों से मुक्त और उपयोग में पूर्णतः सुरक्षित है। खरीदते समय पैकेजिंग पर आधिकारिक ISI मार्क और उसके साथ 7-अंकीय CM/L लाइसेंस नंबर अवश्य देखें।"
+                action = f"खरीदने से पहले आधिकारिक 'BIS Care App' पर CM/L नंबर दर्ज कर निर्माता की प्रमाणिकता सत्यापित करें।"
+            else:
+                ans = f"For consumer health and safety, this product is governed by Indian Standard {is_code}: '{title}' under {qco.upper()} certification."
+                meaning = f"This standard protects consumers against substandard materials and hazardous chemical leaching. When buying, always verify the official ISI mark alongside the mandatory 7-digit CM/L licence number printed on the package."
+                action = f"Download the BIS Care App and enter the 7-digit CM/L number to verify manufacturer authenticity before purchasing, or file a complaint on the BIS Care portal if defective."
         else:
-            ans = f"The applicable Indian Standard for your product is {is_code}: '{title}'. This standard is under {qco.upper()} certification per {qco_ref}."
-            meaning = f"Manufacturing, importing, or selling this item in India requires compliance with {is_code}. {lab_summary}"
-            action = f"Submit Form V via BIS Manak Online portal (www.manakonline.in) and arrange prototype testing at an accredited lab."
+            if target_lang == "hi":
+                ans = f"विनिर्माताओं और MSME के लिए लागू मानक {is_code} ({title}) है। {qco_ref} के तहत इसका अनुपालन {qco} है।"
+                meaning = f"भारत में निर्माण या बिक्री हेतु Scheme-I (ISI मार्क) अनिवार्य है। कारखाने में इन-हाउस परीक्षण उपकरण और गुणवत्ता नियंत्रण आवश्यक है। सूक्ष्म उद्यमों को 50% और लघु/स्टार्टअप को 20% शुल्क छूट प्राप्त है। {lab_summary}"
+                action = f"मानक ऑनलाइन (www.manakonline.in) पर फॉर्म V भरकर आवेदन करें, MSME छूट का दावा करें और अधिकृत लैब में नमूना परीक्षण बुक करें।"
+            else:
+                ans = f"For MSMEs and manufacturers, the applicable standard is {is_code}: '{title}'. Certification is {qco.upper()} under {qco_ref}."
+                meaning = f"Manufacturing, importing, or selling this item requires Scheme-I (ISI Mark) licensing. Requires factory quality control readiness and in-house testing equipment. Micro enterprises receive a 50% fee concession (20% for Small/Startups). {lab_summary}"
+                action = f"Submit Form V on BIS Manak Online (www.manakonline.in), upload your factory test equipment list, claim MSME fee concessions, and schedule prototype testing at an accredited lab."
 
         return {
             "answer": ans,
             "what_it_means": meaning,
             "next_action": action,
             "evidence_tag": evidence,
+            "persona": persona,
             "provider": "deterministic-fallback"
         }
 

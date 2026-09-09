@@ -236,8 +236,8 @@ def api_chat(req: ChatRequest):
         refusal_response["from_cache"] = False
         return refusal_response
 
-    # Step 3: Cache Check (Language-Aware Composite Key)
-    cached_result, cached_active_topic = check_cache(raw_query, resolved_lang) or (None, None)
+    # Step 3: Cache Check (Language-Aware & Persona-Aware Composite Key)
+    cached_result, cached_active_topic = check_cache(raw_query, resolved_lang, persona=current_persona) or (None, None)
     if cached_result:
         # Crucial §3.2 rule: Update turn and active topic even on cache hit!
         turn_rec = {
@@ -378,7 +378,7 @@ def api_chat(req: ChatRequest):
     response_data = synthesize_with_groq(context_payload, raw_query, target_lang=resolved_lang)
 
     # Guardrail Layer 3: Post-LLM Grounding & Hallucination Interceptor
-    response_data = validate_post_llm_grounding(response_data, language=resolved_lang)
+    response_data = validate_post_llm_grounding(response_data, language=resolved_lang, context_payload=context_payload)
 
     # Attach metadata
     response_data["session_id"] = session_id
@@ -402,7 +402,8 @@ def api_chat(req: ChatRequest):
         turn_record=turn_rec,
         increment_turn=True
     )
-    write_cache(raw_query, resolved_lang, response_data, active_topic=resolved_standard_code)
+    if not response_data.get("guardrail_refusal"):
+        write_cache(raw_query, resolved_lang, response_data, active_topic=resolved_standard_code, persona=current_persona)
 
     return response_data
 
