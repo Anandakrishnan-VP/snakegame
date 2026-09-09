@@ -119,15 +119,14 @@
 }
 
 html, body, #root {
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-canvas);
   color: var(--text-primary);
+  overflow-x: hidden;
   line-height: 1.5;
   background-image: var(--body-bg-gradient);
   background-attachment: fixed;

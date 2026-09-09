@@ -27,14 +27,16 @@ export default function Footer() {
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
-        padding: '6px 20px 4px 20px'
+      padding: '12px 24px 8px 24px'
       }}>
         {/* 3 Compact Columns in One Horizontal Strip */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1.4fr 1.3fr 1.3fr',
-          gap: '20px',
-          alignItems: 'start'
+          gap: '24px',
+          alignItems: 'start',
+          paddingBottom: '10px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)'
         }}>
           {/* Column 1: BIS SAATHI */}
           <div>
@@ -56,12 +58,12 @@ export default function Footer() {
               </span>
             </div>
             <p style={{
-              fontSize: '0.66rem',
-              lineHeight: 1.35,
+              fontSize: '0.7rem',
+              lineHeight: 1.45,
               color: '#94a3b8',
               margin: 0
             }}>
-              AI-powered Intelligent Assistant for Indian Standards & BIS Services. An SIH 2026 prototype (PS ID 26107) under the Ministry of Consumer Affairs, Food & Public Distribution.
+              AI-powered Intelligent Assistant for Indian Standards &amp; BIS Services. An SIH 2026 prototype (PS ID 26107) under the Ministry of Consumer Affairs, Food &amp; Public Distribution.
             </p>
           </div>
 
@@ -73,15 +75,15 @@ export default function Footer() {
               fontWeight: 700,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              margin: '0 0 4px 0'
+              margin: '0 0 8px 0'
             }}>
               CONTACT BIS
             </h4>
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '2px',
-              fontSize: '0.65rem'
+              gap: '4px',
+              fontSize: '0.7rem'
             }}>
               <a
                 href="tel:1800111313"
@@ -169,8 +171,8 @@ export default function Footer() {
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: '2px 10px',
-              fontSize: '0.65rem'
+              gap: '5px 14px',
+              fontSize: '0.7rem'
             }}>
               <a
                 href="https://www.services.bis.gov.in"
@@ -241,14 +243,14 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Micro Sub-bar Disclaimer */}
+        {/* Disclaimer Bar */}
         <div style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          marginTop: '4px',
-          paddingTop: '3px',
+          marginTop: '8px',
+          paddingTop: '6px',
           textAlign: 'center',
-          fontSize: '0.62rem',
-          color: '#64748b'
+          fontSize: '0.63rem',
+          color: '#64748b',
+          lineHeight: 1.4
         }}>
           Prototype for SIH 2026 · PS ID 26107 · This is an indicative tool — always verify with BIS for binding regulatory decisions.
         </div>

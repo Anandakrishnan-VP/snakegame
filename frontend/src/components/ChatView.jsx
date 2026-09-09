@@ -98,6 +98,7 @@ export default function ChatView({
     }
   });
 
+  const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const plusMenuRef = useRef(null);
@@ -145,12 +146,27 @@ export default function ChatView({
 
   const quickPrompts = persona === 'consumer' ? consumerPrompts : msmePrompts;
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const isFirstRender = useRef(true);
+
+  const scrollToBottom = (behavior = 'smooth') => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: behavior
+      });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (isFirstRender.current) {
+      scrollToBottom('instant');
+      isFirstRender.current = false;
+    } else {
+      const timer = setTimeout(() => {
+        scrollToBottom('smooth');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [messages, loading]);
 
   // Persist messages across page navigation and reloads until the site is closed
@@ -292,42 +308,43 @@ export default function ChatView({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '100%', maxWidth: '960px', margin: '0 auto', width: '100%', minHeight: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '100%', maxWidth: '980px', margin: '0 auto', width: '100%', minHeight: 0, border: '1px solid var(--border-subtle)', borderRadius: '14px', overflow: 'hidden', background: 'var(--bg-card)', boxShadow: 'var(--shadow-card)' }}>
       {/* Header Bar Controls */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        flexWrap: 'wrap',
         gap: '12px',
-        padding: '10px 18px',
+        padding: '10px 16px',
         background: 'var(--bg-glass)',
         borderBottom: '1px solid var(--border-subtle)',
-        borderRadius: '12px 12px 0 0',
         backdropFilter: 'blur(12px)',
         flexShrink: 0
       }}>
         {/* Active Topic Tag */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Session Topic:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Topic:</span>
           {activeTopic ? (
             <span style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               padding: '3px 10px',
               background: 'rgba(13, 148, 136, 0.12)',
               border: '1px solid rgba(13, 148, 136, 0.3)',
               borderRadius: '9999px',
               color: 'var(--accent-aqua)',
-              fontSize: '0.8rem',
+              fontSize: '0.75rem',
               fontWeight: 700,
-              fontFamily: 'JetBrains Mono'
+              fontFamily: 'JetBrains Mono',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
             }}>
-              <BookOpen size={13} /> {t('active_topic_badge')} {activeTopic}
+              <BookOpen size={12} /> {t('active_topic_badge')} {activeTopic}
             </span>
           ) : (
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{t('topic_inquiry')}</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{t('topic_inquiry')}</span>
           )}
         </div>
 
@@ -338,34 +355,36 @@ export default function ChatView({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '5px',
             padding: '5px 12px',
             borderRadius: '6px',
-            background: 'var(--bg-surface)',
+            background: 'transparent',
             border: '1px solid var(--border-subtle)',
             color: 'var(--text-secondary)',
-            fontSize: '0.78rem',
+            fontSize: '0.75rem',
             fontWeight: 500,
             cursor: 'pointer',
+            flexShrink: 0,
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = 'var(--accent-aqua)';
             e.currentTarget.style.borderColor = 'var(--border-active)';
-            e.currentTarget.style.background = 'var(--bg-card-hover)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.color = 'var(--text-secondary)';
             e.currentTarget.style.borderColor = 'var(--border-subtle)';
-            e.currentTarget.style.background = 'var(--bg-surface)';
           }}
         >
-          <RotateCcw size={13} /> New Chat
+          <RotateCcw size={12} /> New Chat
         </button>
       </div>
 
       {/* Messages Scroll Area */}
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div 
+        ref={messagesContainerRef}
+        style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '14px', background: 'var(--bg-canvas)' }}
+      >
         {messages.map((msg) => (
           <div key={msg.id} className="animate-fade-in" style={{
             display: 'flex',
@@ -682,21 +701,19 @@ export default function ChatView({
       {/* Bottom Area: Controls, Quick Prompts, Input */}
       <div style={{
         flexShrink: 0,
-        background: 'var(--bg-glass)',
+        background: 'var(--bg-surface)',
         borderTop: '1px solid var(--border-subtle)',
-        borderRadius: '0 0 12px 12px',
         backdropFilter: 'blur(16px)',
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Row 1: Controls Toolbar (Persona Switcher & Language Selector) */}
+        {/* Row 1: Persona Toggle + Language */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
           gap: '10px',
-          padding: '8px 16px 6px 16px',
+          padding: '8px 16px',
           borderBottom: '1px solid var(--border-subtle)'
         }}>
           {/* Persona Toggle */}
@@ -793,15 +810,16 @@ export default function ChatView({
           </div>
         </div>
 
-        {/* Row 2: Quick Prompts Chips Carousel */}
+        {/* Row 2: Quick Prompts Chips */}
         <div style={{
-          padding: '6px 16px',
+          padding: '7px 16px',
           display: 'flex',
-          gap: '8px',
+          gap: '7px',
           overflowX: 'auto',
-          alignItems: 'center'
+          alignItems: 'center',
+          borderBottom: '1px solid var(--border-subtle)'
         }}>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontWeight: 500 }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {t('quick_prompt_title')}
           </span>
           {quickPrompts.map((qp, idx) => (
@@ -811,10 +829,10 @@ export default function ChatView({
               onClick={() => sendMessage(qp.query)}
               style={{
                 whiteSpace: 'nowrap',
-                fontSize: '0.75rem',
-                padding: '4px 12px',
+                fontSize: '0.74rem',
+                padding: '4px 11px',
                 borderRadius: '9999px',
-                background: 'var(--bg-surface)',
+                background: 'var(--bg-card)',
                 border: '1px solid var(--border-subtle)',
                 color: 'var(--text-secondary)',
                 cursor: 'pointer',
@@ -828,7 +846,7 @@ export default function ChatView({
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--border-subtle)';
                 e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.background = 'var(--bg-surface)';
+                e.currentTarget.style.background = 'var(--bg-card)';
               }}
             >
               {qp.label}
@@ -837,7 +855,7 @@ export default function ChatView({
         </div>
 
         {/* Row 3: Input Form */}
-        <div style={{ padding: '6px 16px 12px 16px' }}>
+        <div style={{ padding: '10px 16px 14px 16px' }}>
           {/* Attached Image Preview Strip */}
           {attachedImage && (
             <div style={{
