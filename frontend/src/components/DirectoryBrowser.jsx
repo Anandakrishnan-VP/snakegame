@@ -28,9 +28,10 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
 
       const res = await fetch(url);
       const data = await res.json();
-      setStandards(data);
+      setStandards(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch directory", err);
+      setStandards([]);
     } finally {
       setLoading(false);
     }

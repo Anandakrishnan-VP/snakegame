@@ -28,9 +28,10 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
 
       const res = await fetch(url);
       const data = await res.json();
-      setLabs(data);
+      setLabs(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch labs", err);
+      setLabs([]);
     } finally {
       setLoading(false);
     }
