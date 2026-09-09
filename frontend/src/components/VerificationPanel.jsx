@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, ShieldAlert, Search, Award, CheckCircle, AlertTriangle, Building, Calendar, Info } from 'lucide-react';
 
-export default function VerificationPanel() {
+export default function VerificationPanel({ currentLang = 'en', t = (k) => k }) {
   const [code, setCode] = useState('');
   const [activeTab, setActiveTab] = useState('CML');
   const [result, setResult] = useState(null);
@@ -65,13 +65,13 @@ export default function VerificationPanel() {
           fontWeight: 600,
           marginBottom: '12px'
         }}>
-          <ShieldCheck size={16} /> Official Registry Validator
+          <ShieldCheck size={16} /> {t('verify_title')}
         </div>
         <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: '#fff' }}>
-          BIS Licence & Hallmark Verification Hub
+          {t('verify_title')}
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
-          Instantly verify standard ISI marks (CM/L), Gold Hallmark (HUID), and Electronics Compulsory Registration (CRS) numbers against official records.
+          {t('verify_subtitle')}
         </p>
       </div>
 
@@ -120,11 +120,7 @@ export default function VerificationPanel() {
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder={
-                  activeTab === 'CML' ? 'Enter 7-digit CM/L (e.g. CML1234567)' :
-                  activeTab === 'HUID' ? 'Enter 6-char HUID (e.g. AB1234)' :
-                  'Enter CRS R-Number (e.g. R-41001234)'
-                }
+                placeholder={t('verify_placeholder')}
                 style={{
                   width: '100%',
                   padding: '14px 18px',
@@ -144,14 +140,14 @@ export default function VerificationPanel() {
               className="btn-primary"
               style={{ padding: '14px 28px', fontSize: '1rem' }}
             >
-              <Search size={18} /> {loading ? 'Verifying...' : 'Verify Now'}
+              <Search size={18} /> {loading ? 'Verifying...' : t('verify_btn')}
             </button>
           </div>
         </form>
 
         {/* Preset Samples */}
         <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Try Live Sample:</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('verify_samples')}</span>
           {sampleCodes[activeTab].map((s) => (
             <button
               key={s.code}

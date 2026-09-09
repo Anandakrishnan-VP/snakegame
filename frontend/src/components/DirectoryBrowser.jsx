@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Search, ExternalLink, ShieldCheck, Tag, ArrowRight } from 'lucide-react';
 
-export default function DirectoryBrowser({ onSelectStandard }) {
+export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en', t = (k) => k }) {
   const [standards, setStandards] = useState([]);
   const [search, setSearch] = useState('');
   const [division, setDivision] = useState('');
@@ -57,13 +57,13 @@ export default function DirectoryBrowser({ onSelectStandard }) {
           fontWeight: 600,
           marginBottom: '12px'
         }}>
-          <BookOpen size={16} /> Tier A Standards Directory
+          <BookOpen size={16} /> {t('directory_title')}
         </div>
         <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: '#fff' }}>
-          Indian Standards Directory & QCO Status
+          {t('directory_title')}
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
-          Explore key Indian Standards across regulated divisions with real-time Quality Control Order (QCO) enforcement details.
+          {t('directory_subtitle')}
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export default function DirectoryBrowser({ onSelectStandard }) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by IS code, product name, or synonym (e.g. 'bottle', 'helmet', 'battery')..."
+            placeholder={t('directory_search_placeholder')}
             style={{
               width: '100%',
               padding: '12px 16px',

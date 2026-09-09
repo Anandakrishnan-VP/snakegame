@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FlaskConical, MapPin, Mail, Phone, ShieldCheck, Search, Filter } from 'lucide-react';
 
-export default function LabFinder() {
+export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
   const [labs, setLabs] = useState([]);
   const [city, setCity] = useState('');
   const [selectedStandard, setSelectedStandard] = useState('');
@@ -54,13 +54,13 @@ export default function LabFinder() {
           fontWeight: 600,
           marginBottom: '12px'
         }}>
-          <FlaskConical size={16} /> Laboratory Recognition Scheme (LRS)
+          <FlaskConical size={16} /> {t('labs_title')}
         </div>
         <h2 style={{ fontSize: '2rem', margin: '0 0 8px 0', color: '#fff' }}>
-          BIS Recognized Testing Laboratories Locator
+          {t('labs_title')}
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
-          Find NABL-accredited and BIS Central/Regional testing laboratories mapped to specific product standards across India.
+          {t('labs_subtitle')}
         </p>
       </div>
 
@@ -89,7 +89,7 @@ export default function LabFinder() {
         </div>
 
         <div style={{ flex: '1 1 200px' }}>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Filter by City</label>
+          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{t('labs_filter_city')}</label>
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}

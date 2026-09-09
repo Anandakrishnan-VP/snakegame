@@ -25,7 +25,11 @@ UTTERANCES = {
         "find indian standard for cables",
         "specifications for packaged drinking water standard",
         "is code for gold hallmarking",
-        "download is 13252"
+        "download is 13252",
+        "standard for toys",
+        "toy safety standard",
+        "packaged drinking water standard",
+        "ceiling fan standard"
     ],
     "PRODUCT_TO_STANDARD": [
         "which standard applies to stainless steel water bottles",
@@ -35,7 +39,9 @@ UTTERANCES = {
         "what is the standard for two wheeler helmets",
         "making footwear for sports which standard",
         "i produce concrete rebars fe500d",
-        "recommend standard for baby milk bottles"
+        "recommend standard for baby milk bottles",
+        "children toys standard",
+        "what is the standard for toys"
     ],
     "CERTIFICATION_PROCESS": [
         "how to get bis licence",
@@ -118,6 +124,9 @@ def route_intent(query: str) -> Dict[str, Any]:
     # 4. Standard Search Fast-Path (Contains explicit "IS " followed by digits)
     if re.search(r'\bis\s*\d{3,5}\b', text):
         return {"intent": "STANDARD_SEARCH", "confidence": 0.92, "method": "regex_fastpath"}
+
+    if re.search(r'\b(?:standard for|standards for|which standard|what is the standard|applicable standard|safety standard)\b', text):
+        return {"intent": "PRODUCT_TO_STANDARD", "confidence": 0.92, "method": "regex_fastpath"}
 
     # 5. General FAQ Fast-Path
     if re.search(r'\b(?:standards? club|nits|grievance|complaint|bis care|concession|msme fee|udyam discount)\b', text):

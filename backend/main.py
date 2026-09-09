@@ -7,7 +7,7 @@ import os
 import uuid
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -32,6 +32,7 @@ from backend.services.module5_labs import find_testing_labs
 from backend.services.compliance_chain import run_compliance_chain
 from backend.services.llm_groq import synthesize_with_groq, deterministic_synthesis
 from backend.services.guardrails import check_pre_retrieval_guardrails, validate_post_llm_grounding
+from backend.services.transcription import transcribe_audio
 
 app = FastAPI(
     title="BIS Saathi API",
@@ -80,6 +81,22 @@ class VerifyRequest(BaseModel):
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "BIS Saathi API"}
+
+@app.post("/api/transcribe")
+async def api_transcribe(
+    file: UploadFile = File(...),
+    language: Optional[str] = Form("auto")
+):
+    """
+    Speech-to-text endpoint powered by Groq Whisper Large v3.
+    Accepts audio recordings and returns high-accuracy transcripts across Indian languages.
+    """
+    audio_bytes = await file.read()
+    filename = file.filename or "audio.webm"
+    result = transcribe_audio(audio_bytes, filename=filename, language=language)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Transcription failed"))
+    return result
 
 @app.post("/api/verify")
 def api_verify(req: VerifyRequest):

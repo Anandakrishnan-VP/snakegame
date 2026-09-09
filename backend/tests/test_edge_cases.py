@@ -2,7 +2,9 @@
 Comprehensive Test Suite for §19 Edge-Case Checklist.
 Tests all 10 critical edge cases required by the specification.
 """
-
+import os
+import sys
+sys.path.insert(0, os.path.abspath("."))
 import json
 from backend.services.module1_directory import search_directory, get_flagship_chunks
 from backend.services.module2_matcher import match_product_to_standard

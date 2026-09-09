@@ -17,8 +17,18 @@ import {
   Clock,
   RotateCcw
 } from 'lucide-react';
+import { SUPPORTED_LANGUAGES } from '../i18n/translations';
 
-export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscript, setVoiceTranscript, initialQuery }) {
+export default function ChatView({
+  onInspectEvidence,
+  onOpenVoice,
+  voiceTranscript,
+  setVoiceTranscript,
+  initialQuery,
+  currentLang = 'en',
+  setCurrentLang,
+  t = (k) => k
+}) {
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
@@ -41,7 +51,6 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
   const [inputQuery, setInputQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [persona, setPersona] = useState('msme'); // 'msme', 'consumer', 'general'
-  const [language, setLanguage] = useState('en'); // 'en', 'hi', 'auto'
   const [activeTopic, setActiveTopic] = useState(null);
   const [sessionId] = useState(() => 'sess-' + Math.random().toString(36).substring(2, 9));
 
@@ -98,7 +107,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
           query: textToSend,
           session_id: sessionId,
           persona: persona,
-          language: language
+          language: currentLang
         })
       });
 
@@ -176,10 +185,10 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
               fontWeight: 700,
               fontFamily: 'JetBrains Mono'
             }}>
-              <BookOpen size={13} /> {activeTopic}
+              <BookOpen size={13} /> {t('active_topic_badge')} {activeTopic}
             </span>
           ) : (
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>General BIS Inquiry</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{t('topic_inquiry')}</span>
           )}
         </div>
 
@@ -209,7 +218,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                 cursor: 'pointer'
               }}
             >
-              <Building2 size={13} /> MSME / Industry
+              <Building2 size={13} /> {t('persona_msme')}
             </button>
             <button
               onClick={() => setPersona('consumer')}
@@ -227,16 +236,16 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                 cursor: 'pointer'
               }}
             >
-              <Users size={13} /> Consumer
+              <Users size={13} /> {t('persona_consumer')}
             </button>
           </div>
 
-          {/* Language Selector */}
+          {/* Language Selector in Chat Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Globe size={14} color="var(--text-muted)" />
+            <Globe size={14} color="var(--accent-saffron)" />
             <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              value={currentLang}
+              onChange={(e) => setCurrentLang && setCurrentLang(e.target.value)}
               style={{
                 padding: '4px 8px',
                 borderRadius: '6px',
@@ -244,12 +253,15 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                 border: '1px solid var(--border-subtle)',
                 color: '#fff',
                 fontSize: '0.78rem',
-                outline: 'none'
+                outline: 'none',
+                cursor: 'pointer'
               }}
             >
-              <option value="en" style={{ background: '#0b0f19' }}>English</option>
-              <option value="hi" style={{ background: '#0b0f19' }}>हिन्दी (Hindi)</option>
-              <option value="auto" style={{ background: '#0b0f19' }}>Auto-Detect</option>
+              {SUPPORTED_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code} style={{ background: '#0b0f19', color: '#fff' }}>
+                  {l.native} ({l.label})
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -301,7 +313,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                     }}>
                       IS
                     </div>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--accent-saffron)' }}>Direct Guidance</span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--accent-saffron)' }}>{t('card_answer')}</span>
                     {msg.from_cache && (
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Clock size={11} /> Cached Result
@@ -317,7 +329,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                 {msg.what_it_means && (
                   <div style={{ padding: '14px 20px', background: 'rgba(0, 0, 0, 0.2)', borderBottom: '1px solid var(--border-subtle)' }}>
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                      What This Means
+                      {t('card_meaning')}
                     </span>
                     <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#cbd5e1', lineHeight: 1.5 }}>
                       {msg.what_it_means}
@@ -331,7 +343,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <CornerDownRight size={14} color="#38bdf8" />
                       <span style={{ fontSize: '0.78rem', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                        Recommended Next Action
+                        {t('card_action')}
                       </span>
                     </div>
                     <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, fontWeight: 500 }}>
@@ -352,7 +364,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                     gap: '10px'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Source:</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('card_source')}:</span>
                       <span style={{
                         fontSize: '0.8rem',
                         fontWeight: 600,
@@ -367,7 +379,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                         borderRadius: '9999px',
                         fontWeight: 600
                       }}>
-                        {msg.evidence_tag.status ? msg.evidence_tag.status.toUpperCase() : 'CONFIRMED'}
+                        {msg.evidence_tag.status ? (msg.evidence_tag.status === 'confirmed' ? t('tag_confirmed') : t('tag_needs_ver')) : t('tag_confirmed')}
                       </span>
                     </div>
 
@@ -388,7 +400,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      <BookOpen size={13} /> Tap to Inspect Clause & Order <ArrowRight size={12} />
+                      <BookOpen size={13} /> {t('btn_inspect')} <ArrowRight size={12} />
                     </button>
                   </div>
                 )}
@@ -409,7 +421,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
 
       {/* Quick Prompt Chips */}
       <div style={{ padding: '8px 18px', display: 'flex', gap: '8px', overflowX: 'auto', background: 'rgba(0, 0, 0, 0.2)' }}>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', alignSelf: 'center', whiteSpace: 'nowrap' }}>Try Demo:</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', alignSelf: 'center', whiteSpace: 'nowrap' }}>{t('quick_prompt_title')}</span>
         {quickPrompts.map((qp, idx) => (
           <button
             key={idx}
@@ -437,7 +449,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
           <button
             type="button"
             onClick={onOpenVoice}
-            title="Voice input with transcript review"
+            title={t('chat_listening')}
             style={{
               padding: '12px',
               borderRadius: '10px',
@@ -457,7 +469,7 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Ask anything about Indian Standards, product rules, or test requirements..."
+            placeholder={t('chat_placeholder')}
             style={{
               flex: 1,
               padding: '14px 18px',
@@ -479,6 +491,10 @@ export default function ChatView({ onInspectEvidence, onOpenVoice, voiceTranscri
             <Send size={18} />
           </button>
         </form>
+
+        <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+          {t('chat_disclaimer')}
+        </p>
       </div>
     </div>
   );

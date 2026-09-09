@@ -39,6 +39,22 @@ def synthesize_with_groq(context_payload: Dict[str, Any], user_query: str, targe
         evidence = context_payload.get("evidence_tag", {})
         persona = context_payload.get("persona", "general")
 
+        INDIC_LANGUAGE_NAMES = {
+            "en": "English",
+            "hi": "Hindi (Devanagari script - हिन्दी)",
+            "ta": "Tamil (தமிழ்)",
+            "te": "Telugu (తెలుగు)",
+            "mr": "Marathi (मराठी)",
+            "bn": "Bengali (বাংলা)",
+            "gu": "Gujarati (ગુજરાતી)",
+            "kn": "Kannada (ಕನ್ನಡ)",
+            "ml": "Malayalam (മലയാളം)",
+            "pa": "Punjabi (ਪੰਜਾਬੀ)",
+            "or": "Odia (ଓଡ଼ିଆ)",
+            "ur": "Urdu (اردو)"
+        }
+        target_lang_desc = INDIC_LANGUAGE_NAMES.get(target_lang, "English")
+
         system_prompt = f"""You are BIS Saathi, an official AI assistant for the Bureau of Indian Standards (BIS).
 Your goal is to provide accurate, grounded, and source-backed guidance strictly on Indian Standards, certification schemes, testing laboratories, and consumer affairs.
 
@@ -49,8 +65,8 @@ CRITICAL GUARDRAIL RULES:
    - answer: 1-2 plain-language sentences directly answering the user based only on the context.
    - what_it_means: Simple translation of the standard or regulatory requirement for an MSME, startup, or consumer.
    - next_action: One concrete, actionable step the user should take right now.
-4. Language constraint: Respond in {'Hindi (Devanagari script)' if target_lang == 'hi' else 'English'}.
-   PRESERVE all IS codes (e.g., 'IS 9873 (Part 1):2019'), clause numbers, HUIDs, licence numbers, and units without translating or altering them.
+4. Language constraint: You MUST write the entire JSON response (answer, what_it_means, next_action) directly in {target_lang_desc}.
+   CRITICAL PRESERVATION: PRESERVE all Indian Standard codes (e.g., 'IS 9873 (Part 1):2019', 'IS 17803:2022'), clause numbers, HUIDs, licence numbers (CM/L), and statutory QCO numbers (e.g., 'S.O. 853(E)') completely unromanized and unchanged.
 5. Output MUST be valid JSON conforming to:
 {{
   "answer": "...",
