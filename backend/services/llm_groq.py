@@ -294,6 +294,26 @@ def deterministic_synthesis(context_payload: Dict[str, Any], user_query: str, ta
                 "provider": "deterministic-fallback"
             }
 
+        # 6. Complaint / Grievance / Defective Item
+        if any(w in q_clean for w in ["complaint", "grievance", "defective", "fake isi", "substandard", "report"]):
+            if target_lang == "hi":
+                return {
+                    "answer": "उपभोक्ता **दोषपूर्ण उत्पादों**, **ISI मार्क के दुरुपयोग** या **नकली हॉलमार्किंग** के विरुद्ध सीधे आधिकारिक **BIS Care App** या **मानक ऑनलाइन** पोर्टल के माध्यम से शिकायत दर्ज कर सकते हैं।",
+                    "what_it_means": "बीआईएस अधिनियम 2016 की धारा 29 के तहत, जाली या नकली ISI मार्क वाले सामान का निर्माण या बिक्री एक संज्ञेय अपराध है, जिसमें 2 साल तक की कैद और भारी जुर्माने का प्रावधान है। बीआईएस अधिकारी उपभोक्ता शिकायतों के आधार पर जांच और जब्ती अभियान चलाते हैं।",
+                    "next_action": "आधिकारिक 'BIS Care App' डाउनलोड करें और 'Lodge Grievance' पर जाकर रसीद व उत्पाद की फोटो अपलोड कर शिकायत दर्ज करें, या www.manakonline.in पर 'Consumer Grievance' विकल्प चुनें।",
+                    "evidence_tag": evidence,
+                    "persona": persona,
+                    "provider": "deterministic-fallback"
+                }
+            return {
+                "answer": "Consumers can file complaints against **defective products**, **misuse of ISI marks**, or **fake hallmarking** directly through the official **BIS Care App** or the **Manak Online** portal.",
+                "what_it_means": "Under Section 29 of the BIS Act 2016, manufacturing or selling goods with counterfeit ISI marks is a cognizable criminal offense punishable with imprisonment up to 2 years and heavy fines. BIS enforcement officers conduct search-and-seizure raids based on consumer complaints.",
+                "next_action": "Download the official 'BIS Care App' (Android & iOS) and navigate to 'Lodge Grievance' to upload photos of the fake mark and purchase receipt, or visit https://www.manakonline.in under 'Consumer Grievance'.",
+                "evidence_tag": evidence,
+                "persona": persona,
+                "provider": "deterministic-fallback"
+            }
+
         # Default FAQ match from database
         faqs = context_payload.get("faqs", [])
         if faqs:

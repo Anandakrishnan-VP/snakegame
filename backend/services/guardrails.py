@@ -16,7 +16,8 @@ JAILBREAK_PATTERNS = [
     r'\b(?:system\s+prompt|reveal\s+(?:your\s+)?prompt|show\s+prompt)\b',
     r'\bact\s+as\s+(?:an?\s+)?(?:unrestricted|dan|jailbroken|evil)\b',
     r'\bpretend\s+you\s+(?:are|can)\b',
-    r'\b(?:bypass|fake|counterfeit|forge)\s+(?:bis|isi|hallmark|customs|inspection|test)\b',
+    r'\b(?:how\s+to\s+)?(?:bypass|evade|bribe)\s+(?:bis|isi|hallmark|customs|inspection|test)\b',
+    r'\b(?:how\s+to\s+(?:make|create|print|generate|forge)|how\s+to\s+fake)\s+(?:a\s+)?(?:bis|isi|hallmark|mark|stamp|licence|license)\b',
     r'\bhow\s+to\s+(?:cheat|forge|evade|bribe)\b'
 ]
 
@@ -43,13 +44,18 @@ def check_pre_retrieval_guardrails(query: str, language: str = "en") -> Tuple[bo
     """
     text = query.strip().lower()
 
+    # 0. Allow legitimate consumer grievance, defect reporting, or counterfeit detection
+    # Queries asking how to report, file complaint, spot, or check fake marks are core BIS services
+    is_consumer_grievance = bool(re.search(r'\b(?:complaint|grievance|report|defective|substandard|spot\s+fake|check\s+fake|detect\s+fake|misuse\s+of)\b', text, re.IGNORECASE))
+
     # 1. Jailbreak Check
-    for pat in JAILBREAK_PATTERNS:
-        if re.search(pat, text, re.IGNORECASE):
-            return False, generate_refusal_response(
-                reason="Adversarial or security boundary violation detected.",
-                language=language
-            )
+    if not is_consumer_grievance:
+        for pat in JAILBREAK_PATTERNS:
+            if re.search(pat, text, re.IGNORECASE):
+                return False, generate_refusal_response(
+                    reason="Adversarial or security boundary violation detected.",
+                    language=language
+                )
 
     # 2. Out-of-Domain Topic Check
     for pat in OUT_OF_DOMAIN_PATTERNS:
