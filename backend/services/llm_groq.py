@@ -55,7 +55,16 @@ def synthesize_with_groq(context_payload: Dict[str, Any], user_query: str, targe
         }
         target_lang_desc = INDIC_LANGUAGE_NAMES.get(target_lang, "English")
 
-        if context_payload.get("intent") == "GENERAL_FAQ":
+        if context_payload.get("intent") == "LAB_SEARCH":
+            persona_directive = """
+TARGET INQUIRY: LABORATORY TESTING & ACCREDITED FACILITIES (LAB SEARCH)
+- The user is asking where to test a product/standard, locate testing facilities, or get samples tested.
+- Do NOT state that "no standard was found for this product".
+- "answer": Inform the user where testing is available based on the accredited laboratories in the context. Name the accredited facilities, their cities, states, and accreditation status.
+- "what_it_means": Explain that testing at a BIS-recognized or NABL-accredited facility under the BIS Laboratory Recognition Scheme (LRS) is required for product conformity, ISI mark licensing, or CRS registration.
+- "next_action": Instruct the user to submit sample testing requests via the Manak Online LRS portal (www.manakonline.in) or contact the laboratory directly.
+"""
+        elif context_payload.get("intent") == "GENERAL_FAQ":
             persona_directive = """
 TARGET INQUIRY: GENERAL BIS INSTITUTIONAL / CITIZEN / APP GUIDANCE
 - The user is asking a general informational question about the Bureau of Indian Standards (e.g. what BIS is, official mobile apps like the BIS Care App, web portals like Manak Online, ISI marks, or consumer grievance mechanisms).
@@ -95,7 +104,8 @@ CRITICAL GUARDRAIL RULES:
    - next_action: One concrete, actionable step the user should take right now (Form V on Manak Online for MSME; BIS Care App verification for Consumer).
 4. Language constraint: You MUST write the entire JSON response (answer, what_it_means, next_action) directly in {target_lang_desc}.
    CRITICAL PRESERVATION: PRESERVE all Indian Standard codes (e.g., 'IS 9873 (Part 1):2019', 'IS 17803:2022'), clause numbers, HUIDs, licence numbers (CM/L), and statutory QCO numbers (e.g., 'S.O. 853(E)') completely unromanized and unchanged.
-5. Output MUST be valid JSON conforming to:
+5. REGULATORY STATUS ACCURACY: If the context indicates that a standard's QCO status is 'Voluntary', you MUST explicitly state that compliance and certification are voluntary and not legally enforced by a mandatory Quality Control Order (QCO). Do NOT claim it is mandatory to obtain a licence before selling.
+6. Output MUST be valid JSON conforming to:
 {{
   "answer": "...",
   "what_it_means": "...",
@@ -124,6 +134,7 @@ Please synthesize the response JSON specifically tailored for this {persona.uppe
                         {"role": "user", "content": user_prompt}
                     ],
                     temperature=0.2,
+                    max_tokens=900 if "qwen" in model_id else 1500,
                     response_format={"type": "json_object"}
                 )
 
@@ -296,32 +307,88 @@ def deterministic_synthesis(context_payload: Dict[str, Any], user_query: str, ta
                 "provider": "deterministic-fallback"
             }
 
+    if context_payload.get("intent") == "LAB_SEARCH" or (labs and not standard and not out_of_scope):
+        target_code = context_payload.get("standard_code") or (evidence.get("reference") if evidence.get("reference") != "None" else None)
+        std_title = context_payload.get("standard_title")
+        code_str = f" for {target_code}" if target_code else ""
+        if std_title:
+            code_str += f" ({std_title})"
+
+        if labs:
+            top_labs = labs[:3]
+            lab_names = ", ".join([f"{l['lab_name']} ({l['city']}, {l['state']})" for l in top_labs])
+            if target_lang == "hi":
+                ans = f"इस मानक{code_str} के परीक्षण हेतु बीआईएस-मान्यता प्राप्त प्रयोगशालाएं उपलब्ध हैं: {lab_names}।"
+                meaning = "बीआईएस प्रयोगशाला मान्यता योजना (LRS) के तहत ये प्रयोगशालाएं उत्पाद के रासायनिक, यांत्रिक और सुरक्षा मानकों के परीक्षण हेतु अधिकृत हैं।"
+                action = "परीक्षण अनुरोध दर्ज करने हेतु मानक ऑनलाइन (www.manakonline.in) के LRS मॉड्यूल पर जाएं या निकटतम प्रयोगशाला से संपर्क करें।"
+            else:
+                ans = f"Accredited testing facilities{code_str} include: {lab_names}."
+                meaning = "These laboratories operate under the BIS Laboratory Recognition Scheme (LRS) and are accredited to perform statutory conformity tests."
+                action = "Submit test requests via the Manak Online LRS portal (www.manakonline.in) or contact the laboratory directly to schedule prototype testing."
+        else:
+            if target_lang == "hi":
+                ans = f"इस मानक{code_str} के लिए स्थानीय लैब नहीं मिली। नमूने बीआईएस केंद्रीय प्रयोगशाला (CL साहिबाबाद) या क्षेत्रीय परीक्षण गृह में भेजे जा सकते हैं।"
+                meaning = "बीआईएस केंद्रीय प्रयोगशाला देश भर के उत्पादों के लिए राष्ट्रीय रेफरल परीक्षण केंद्र के रूप में कार्य करती है।"
+                action = "मानक ऑनलाइन (www.manakonline.in) पर LRS लैब निर्देशिका देखें या बीआईएस केंद्रीय प्रयोगशाला से संपर्क करें।"
+            else:
+                ans = f"No specific regional lab was mapped locally{code_str}. Testing can be conducted at the BIS Central Laboratory (CL Sahibabad) or Regional Test Houses."
+                meaning = "The BIS Central Laboratory acts as the national apex testing facility for product conformity assessment under the BIS Act 2016."
+                action = "Access the comprehensive Laboratory Recognition Scheme (LRS) directory on Manak Online (www.manakonline.in) to locate additional recognized labs."
+
+        return {
+            "answer": ans,
+            "what_it_means": meaning,
+            "next_action": action,
+            "evidence_tag": evidence,
+            "persona": persona,
+            "provider": "deterministic-fallback"
+        }
+
     if standard:
         is_code = standard.get("is_code", "")
         title = standard.get("title", "")
         qco = standard.get("qco_status", "Mandatory")
         qco_ref = standard.get("qco_reference", "BIS Mandatory Order")
+        is_voluntary = "voluntary" in qco.lower()
 
         lab_summary = f"Testing is available at {labs[0]['lab_name']} ({labs[0]['city']})" if labs else "Samples can be tested at BIS Central Laboratory (CL Sahibabad)."
 
         if persona == "consumer":
             if target_lang == "hi":
-                ans = f"उपभोक्ता सुरक्षा हेतु, इस उत्पाद के लिए भारतीय मानक {is_code} ({title}) निर्धारित है। यह {qco} प्रमाणन के अंतर्गत आता है।"
-                meaning = f"यह मानक सुनिश्चित करता है कि उत्पाद विषैले तत्वों से मुक्त और उपयोग में पूर्णतः सुरक्षित है। खरीदते समय पैकेजिंग पर आधिकारिक ISI मार्क और उसके साथ 7-अंकीय CM/L लाइसेंस नंबर अवश्य देखें।"
+                if is_voluntary:
+                    ans = f"उपभोक्ता जानकारी हेतु, इस उत्पाद के लिए भारतीय मानक {is_code} ({title}) उपलब्ध है। यह एक स्वैच्छिक मानक है (अनिवार्य QCO लागू नहीं है)।"
+                    meaning = f"यद्यपि यह मानक कानूनी रूप से अनिवार्य नहीं है, स्वैच्छिक ISI मार्क वाला उत्पाद प्रमाणित गुणवत्ता और सुरक्षा सुनिश्चित करता है।"
+                else:
+                    ans = f"उपभोक्ता सुरक्षा हेतु, इस उत्पाद के लिए भारतीय मानक {is_code} ({title}) निर्धारित है। यह {qco} प्रमाणन के अंतर्गत आता है।"
+                    meaning = f"यह मानक सुनिश्चित करता है कि उत्पाद विषैले तत्वों से मुक्त और उपयोग में पूर्णतः सुरक्षित है। खरीदते समय पैकेजिंग पर आधिकारिक ISI मार्क और उसके साथ 7-अंकीय CM/L लाइसेंस नंबर अवश्य देखें।"
                 action = f"खरीदने से पहले आधिकारिक 'BIS Care App' पर CM/L नंबर दर्ज कर निर्माता की प्रमाणिकता सत्यापित करें।"
             else:
-                ans = f"For consumer health and safety, this product is governed by Indian Standard {is_code}: '{title}' under {qco.upper()} certification."
-                meaning = f"This standard protects consumers against substandard materials and hazardous chemical leaching. When buying, always verify the official ISI mark alongside the mandatory 7-digit CM/L licence number printed on the package."
+                if is_voluntary:
+                    ans = f"For consumer awareness, this product is covered under Indian Standard {is_code}: '{title}'. This standard is currently VOLUNTARY."
+                    meaning = f"Mandatory certification is not enforced by a Quality Control Order, but products carrying the voluntary ISI mark assure verified compliance with BIS quality benchmarks."
+                else:
+                    ans = f"For consumer health and safety, this product is governed by Indian Standard {is_code}: '{title}' under {qco.upper()} certification."
+                    meaning = f"This standard protects consumers against substandard materials and hazardous chemical leaching. When buying, always verify the official ISI mark alongside the mandatory 7-digit CM/L licence number printed on the package."
                 action = f"Download the BIS Care App and enter the 7-digit CM/L number to verify manufacturer authenticity before purchasing, or file a complaint on the BIS Care portal if defective."
         else:
             if target_lang == "hi":
-                ans = f"विनिर्माताओं और MSME के लिए लागू मानक {is_code} ({title}) है। {qco_ref} के तहत इसका अनुपालन {qco} है।"
-                meaning = f"भारत में निर्माण या बिक्री हेतु Scheme-I (ISI मार्क) अनिवार्य है। कारखाने में इन-हाउस परीक्षण उपकरण और गुणवत्ता नियंत्रण आवश्यक है। सूक्ष्म उद्यमों को 50% और लघु/स्टार्टअप को 20% शुल्क छूट प्राप्त है। {lab_summary}"
-                action = f"मानक ऑनलाइन (www.manakonline.in) पर फॉर्म V भरकर आवेदन करें, MSME छूट का दावा करें और अधिकृत लैब में नमूना परीक्षण बुक करें।"
+                if is_voluntary:
+                    ans = f"विनिर्माताओं और MSME के लिए संबंधित मानक {is_code} ({title}) है। यह मानक स्वैच्छिक है ({qco_ref})।"
+                    meaning = f"गुणवत्ता नियंत्रण आदेश (QCO) के तहत अनिवार्य लाइसेंसिंग लागू नहीं है। विनिर्माता बाजार में विश्वसनीयता हेतु स्वेच्छा से Scheme-I (ISI मार्क) प्राप्त कर सकते हैं। सूक्ष्म उद्यमों को 50% और लघु/स्टार्टअप को 20% शुल्क छूट प्राप्त है। {lab_summary}"
+                    action = f"स्वेच्छा से ISI मार्क प्राप्त करने हेतु मानक ऑनलाइन (www.manakonline.in) पर फॉर्म V भरें या मान्यता प्राप्त लैब में गुणवत्ता परीक्षण कराएं।"
+                else:
+                    ans = f"विनिर्माताओं और MSME के लिए लागू मानक {is_code} ({title}) है। {qco_ref} के तहत इसका अनुपालन {qco} है।"
+                    meaning = f"भारत में निर्माण या बिक्री हेतु Scheme-I (ISI मार्क) अनिवार्य है। कारखाने में इन-हाउस परीक्षण उपकरण और गुणवत्ता नियंत्रण आवश्यक है। सूक्ष्म उद्यमों को 50% और लघु/स्टार्टअप को 20% शुल्क छूट प्राप्त है। {lab_summary}"
+                    action = f"मानक ऑनलाइन (www.manakonline.in) पर फॉर्म V भरकर आवेदन करें, MSME छूट का दावा करें और अधिकृत लैब में नमूना परीक्षण बुक करें।"
             else:
-                ans = f"For MSMEs and manufacturers, the applicable standard is {is_code}: '{title}'. Certification is {qco.upper()} under {qco_ref}."
-                meaning = f"Manufacturing, importing, or selling this item requires Scheme-I (ISI Mark) licensing. Requires factory quality control readiness and in-house testing equipment. Micro enterprises receive a 50% fee concession (20% for Small/Startups). {lab_summary}"
-                action = f"Submit Form V on BIS Manak Online (www.manakonline.in), upload your factory test equipment list, claim MSME fee concessions, and schedule prototype testing at an accredited lab."
+                if is_voluntary:
+                    ans = f"For MSMEs and manufacturers, the relevant standard is {is_code}: '{title}'. Compliance is VOLUNTARY under current regulations ({qco_ref})."
+                    meaning = f"Mandatory certification is not enforced by a Quality Control Order (QCO). However, manufacturers can voluntarily apply for Scheme-I (ISI Mark) for market differentiation. Micro enterprises receive a 50% fee concession (20% for Small/Startups). {lab_summary}"
+                    action = f"To pursue voluntary ISI mark certification, submit Form V on BIS Manak Online (www.manakonline.in) or test prototypes at accredited labs."
+                else:
+                    ans = f"For MSMEs and manufacturers, the applicable standard is {is_code}: '{title}'. Certification is {qco.upper()} under {qco_ref}."
+                    meaning = f"Manufacturing, importing, or selling this item requires Scheme-I (ISI Mark) licensing. Requires factory quality control readiness and in-house testing equipment. Micro enterprises receive a 50% fee concession (20% for Small/Startups). {lab_summary}"
+                    action = f"Submit Form V on BIS Manak Online (www.manakonline.in), upload your factory test equipment list, claim MSME fee concessions, and schedule prototype testing at an accredited lab."
 
         return {
             "answer": ans,

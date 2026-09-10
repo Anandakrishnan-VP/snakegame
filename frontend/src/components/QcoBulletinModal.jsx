@@ -23,7 +23,12 @@ export default function QcoBulletinModal({
   onRefresh,
   isRefreshing,
   onAskAboutStandard,
-  t = (k) => k
+  t = (k) => k,
+  readNoticeIds,
+  unreadCount = 0,
+  isNoticeUnread,
+  onMarkAllRead,
+  onMarkAllUnread
 }) {
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'extended', 'upcoming', 'active'
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,6 +222,32 @@ export default function QcoBulletinModal({
               <span>{isRefreshing ? 'Syncing Gazette...' : 'Sync with Live Gazette'}</span>
             </button>
 
+            {onMarkAllUnread && (
+              <button
+                onClick={unreadCount > 0 ? onMarkAllRead : onMarkAllUnread}
+                title={unreadCount > 0 ? "Mark all notices as read" : "Mark recent notices as unread (Demo for judges)"}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '6px 11px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-card)',
+                  color: unreadCount > 0 ? 'var(--accent-aqua)' : 'var(--text-muted)',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-aqua)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+              >
+                <CheckCircle2 size={13} color={unreadCount > 0 ? "var(--accent-aqua)" : "var(--text-muted)"} />
+                <span>{unreadCount > 0 ? `Mark All Read (${unreadCount})` : 'Mark Unread (Demo)'}</span>
+              </button>
+            )}
+
             <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
               Last Synced: <strong>{formatLastSynced(bulletinData?.last_synced)}</strong>
             </span>
@@ -313,12 +344,13 @@ export default function QcoBulletinModal({
               <p style={{ margin: '4px 0 0', fontSize: '0.75rem' }}>Click "Sync with Live Gazette" to scan official portals for fresh notifications.</p>
             </div>
           ) : (
-            filteredNotices.map((notice) => {
+            filteredNotices.map((notice, idx) => {
               const isExtended = notice.status === 'extended';
               const isUpcoming = notice.status === 'upcoming';
               const badgeBg = isExtended ? 'rgba(59, 130, 246, 0.12)' : isUpcoming ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)';
               const badgeBorder = isExtended ? 'rgba(59, 130, 246, 0.3)' : isUpcoming ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)';
               const badgeColor = isExtended ? '#2563eb' : isUpcoming ? '#d97706' : '#059669';
+              const unread = isNoticeUnread ? isNoticeUnread(notice, idx) : (readNoticeIds && !readNoticeIds.has(notice.id));
 
               return (
                 <div
@@ -357,6 +389,20 @@ export default function QcoBulletinModal({
                       }}>
                         {notice.standard_code}
                       </span>
+                      {unread && (
+                        <span style={{
+                          fontSize: '0.62rem',
+                          fontWeight: 800,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          border: '1px solid rgba(239, 68, 68, 0.35)',
+                          color: '#ef4444',
+                          letterSpacing: '0.04em'
+                        }}>
+                          NEW
+                        </span>
+                      )}
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                         {notice.product_category}
                       </span>

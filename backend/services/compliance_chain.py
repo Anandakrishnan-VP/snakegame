@@ -47,15 +47,32 @@ def run_compliance_chain(query: str, city: Optional[str] = None, state: Optional
     qco_status = primary_std["qco_status"]
     qco_ref = primary_std["qco_reference"]
 
-    # Step 2: Determine Appropriate Certification Scheme
-    if "CRS" in division or "Electronics" in division:
+    # Step 2: Determine Appropriate Certification Scheme & Steps
+    is_voluntary = "voluntary" in (qco_status or "").lower()
+
+    if is_voluntary:
+        scheme_name = "Voluntary"
+        cert_steps = [
+            {
+                "step_id": "step-1",
+                "scheme": "Voluntary",
+                "step_number": 1,
+                "title": "Voluntary Standard Compliance",
+                "description": "This standard is currently voluntary. No mandatory Quality Control Order (QCO) enforcement applies. Manufacturers may voluntarily apply for ISI mark certification under Scheme-I for quality differentiation.",
+                "applies_to": "all",
+                "indicative_timeline": "Immediate (Optional)",
+                "source": primary_std.get("source_url") or "https://www.bis.gov.in"
+            }
+        ]
+        scheme_info = get_scheme_overview("Voluntary")
+    elif "CRS" in division or "Electronics" in division:
         scheme_name = "CRS"
+        cert_steps = get_certification_steps(scheme=scheme_name, applies_to="domestic")
+        scheme_info = get_scheme_overview(scheme_name)
     else:
         scheme_name = "Scheme-I"
-
-    # Step 3: Fetch Certification Steps
-    cert_steps = get_certification_steps(scheme=scheme_name, applies_to="domestic")
-    scheme_info = get_scheme_overview(scheme_name)
+        cert_steps = get_certification_steps(scheme=scheme_name, applies_to="domestic")
+        scheme_info = get_scheme_overview(scheme_name)
 
     # Step 4: Fetch Testing Laboratories
     labs = find_testing_labs(is_code=is_code, city=city, state=state)
@@ -82,6 +99,11 @@ def run_compliance_chain(query: str, city: Optional[str] = None, state: Optional
         }
     else:
         # Tier A standard has verified directory & QCO order
+        if is_voluntary:
+            clause_desc = f"Classified as Voluntary under {qco_ref}. No mandatory Quality Control Order (QCO) enforcement applies."
+        else:
+            clause_desc = f"Notified under {qco_ref}. Mandatory compliance enforced by BIS."
+
         evidence_tag = {
             "source_type": "directory",
             "reference": is_code,
@@ -89,8 +111,8 @@ def run_compliance_chain(query: str, city: Optional[str] = None, state: Optional
             "clause_number": "Directory & QCO Reference",
             "sub_clause": None,
             "page": 1,
-            "clause_summary": f"Notified under {qco_ref}. Mandatory compliance enforced by BIS.",
-            "verbatim_excerpt": f"Notified under {qco_ref}. Mandatory compliance enforced by BIS.",
+            "clause_summary": clause_desc,
+            "verbatim_excerpt": clause_desc,
             "document_title": primary_std["title"],
             "qco_reference": qco_ref,
             "source_url": primary_std["source_url"]

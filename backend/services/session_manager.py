@@ -13,11 +13,12 @@ def normalize_text(text: str) -> str:
     """Normalizes whitespace and lowercases query string for hashing."""
     return re.sub(r'\s+', ' ', text.strip().lower())
 
-def make_cache_key(query: str, language: str, persona: str = "general") -> str:
-    """Creates a SHA256 composite cache key from normalized text, resolved language, and persona."""
+def make_cache_key(query: str, language: str, persona: str = "general", active_topic: Optional[str] = None) -> str:
+    """Creates a SHA256 composite cache key from normalized text, resolved language, persona, and active topic."""
     norm = normalize_text(query)
     persona_norm = (persona or "general").lower().strip()
-    raw = f"{norm}::{language.lower().strip()}::{persona_norm}"
+    topic_norm = (active_topic or "").lower().strip()
+    raw = f"{norm}::{language.lower().strip()}::{persona_norm}::{topic_norm}"
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
 def get_or_create_session(session_id: str, persona: str = "general", language: str = "en") -> Dict[str, Any]:
@@ -74,6 +75,15 @@ def update_session(
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Ensure session exists before updating
+    cursor.execute("SELECT session_id FROM session_state WHERE session_id = ?", (session_id,))
+    if not cursor.fetchone():
+        cursor.execute("""
+            INSERT INTO session_state (session_id, active_topic, persona, language, turn_count, turn_history)
+            VALUES (?, ?, ?, ?, 0, '[]')
+        """, (session_id, active_topic, persona or "general", language or "en"))
+        conn.commit()
+
     # If turn_record is provided, append it to the stored turn_history JSON array
     if turn_record is not None:
         cursor.execute("SELECT turn_history FROM session_state WHERE session_id = ?", (session_id,))
@@ -113,12 +123,12 @@ def update_session(
     conn.commit()
     conn.close()
 
-def check_cache(query: str, language: str, persona: str = "general") -> Optional[Tuple[Dict[str, Any], Optional[str]]]:
+def check_cache(query: str, language: str, persona: str = "general", active_topic: Optional[str] = None) -> Optional[Tuple[Dict[str, Any], Optional[str]]]:
     """
-    Checks cache for normalized query, language, and persona.
+    Checks cache for normalized query, language, persona, and context active topic.
     Returns (response_dict, active_topic) or None.
     """
-    cache_key = make_cache_key(query, language, persona=persona)
+    cache_key = make_cache_key(query, language, persona=persona, active_topic=active_topic)
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -134,7 +144,14 @@ def check_cache(query: str, language: str, persona: str = "general") -> Optional
             return None
     return None
 
-def write_cache(query: str, language: str, response_data: Dict[str, Any], active_topic: Optional[str] = None, persona: str = "general"):
+def write_cache(
+    query: str,
+    language: str,
+    response_data: Dict[str, Any],
+    active_topic: Optional[str] = None,
+    persona: str = "general",
+    context_topic: Optional[str] = None
+):
     """Writes synthesized response to query_cache with composite key (never caches refusals)."""
     if not response_data or response_data.get("guardrail_refusal") or response_data.get("out_of_scope"):
         return
@@ -143,7 +160,7 @@ def write_cache(query: str, language: str, response_data: Dict[str, Any], active
     if response_data.get("evidence_tag", {}).get("status") == "not determined":
         return
 
-    cache_key = make_cache_key(query, language, persona=persona)
+    cache_key = make_cache_key(query, language, persona=persona, active_topic=context_topic)
     conn = get_db_connection()
     cursor = conn.cursor()
 

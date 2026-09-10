@@ -70,7 +70,17 @@ UTTERANCES = {
         "recognized testing labs in delhi or chennai",
         "where can i test lithium ion battery in india",
         "bis central laboratory contact",
-        "nabl test house for toys"
+        "nabl test house for toys",
+        "where can i get it tested",
+        "where can i get this tested",
+        "where to get it tested",
+        "where to get this tested",
+        "where do i get it tested",
+        "where can this be tested",
+        "where can it be tested",
+        "where to test this",
+        "testing facilities near me",
+        "test centres in delhi"
     ],
     "GENERAL_FAQ": [
         "what is bis",
@@ -160,8 +170,13 @@ def route_intent(query: str) -> Dict[str, Any]:
         return {"intent": "GENERAL_FAQ", "confidence": 0.95, "method": "regex_fastpath"}
 
     # 3. Lab Search Fast-Path
-    if re.search(r'\b(?:lab|testing lab|laborator(?:y|ies)|where can i test|nabl lab)\b', text):
-        return {"intent": "LAB_SEARCH", "confidence": 0.92, "method": "regex_fastpath"}
+    if (
+        re.search(r'\b(?:labs?|laborator(?:y|ies)|testing lab(?:s)?|nabl lab(?:s)?|test(?:ing)? facilit(?:y|ies)|test(?:ing)? cent(?:er|re)s?|test house(?:s)?)\b', text)
+        or re.search(r'\b(?:where|how)\s+(?:can|to|do|could|should)\s+(?:i|we|a consumer|a manufacturer)?\s*(?:get\s+)?(?:it\s+|this\s+|the product\s+)?(?:be\s+)?test(?:ed)?\b', text)
+        or re.search(r'\b(?:where\s+to\s+test|where\s+can\s+(?:i|we)\s+test|where\s+is\s+(?:it\s+)?tested|where\s+can\s+this\s+be\s+tested)\b', text)
+        or re.search(r'\b(?:get\s+(?:it|this|the product)\s+tested|get\s+tested)\b', text)
+    ):
+        return {"intent": "LAB_SEARCH", "confidence": 0.95, "method": "regex_fastpath"}
 
     # 4. Certification Steps Fast-Path
     if re.search(r'\b(?:how to apply|how to get (?:certified|licence|license)|procedure|certification step|process for|scheme-i|crs|fmcs|form v|timeline|licensing steps)\b', text):

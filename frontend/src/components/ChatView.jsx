@@ -11,7 +11,6 @@ import {
   Bot, 
   Building2, 
   Users, 
-  Globe, 
   CornerDownRight, 
   HelpCircle,
   Clock,
@@ -22,7 +21,6 @@ import {
   Upload,
   X
 } from 'lucide-react';
-import { SUPPORTED_LANGUAGES } from '../i18n/translations';
 import { API_BASE_URL } from '../api/config';
 import CameraModal from './CameraModal';
 
@@ -720,11 +718,10 @@ export default function ChatView({
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Row 1: Persona Toggle + Language */}
+        {/* Row 1: Persona Toggle */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
           gap: '10px',
           padding: '8px 16px',
           borderBottom: '1px solid var(--border-subtle)'
@@ -788,43 +785,6 @@ export default function ChatView({
                 <Users size={13} /> {t('persona_consumer')}
               </button>
             </div>
-          </div>
-
-          {/* Language Selector Dropdown */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'var(--bg-surface)',
-            padding: '4px 10px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-subtle)',
-            flexShrink: 0
-          }}>
-            <Globe size={14} color="var(--accent-aqua)" style={{ flexShrink: 0 }} />
-            <select
-              value={currentLang}
-              onChange={(e) => setCurrentLang && setCurrentLang(e.target.value)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                outline: 'none',
-                cursor: 'pointer',
-                maxWidth: '140px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {SUPPORTED_LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-                  {l.native} ({l.label})
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 

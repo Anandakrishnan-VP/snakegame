@@ -213,6 +213,113 @@ def test_12_conversational_acknowledgments_and_thanks():
     assert r_intent["intent"] == "CONVERSATIONAL_ACK"
     print("[PASS] Edge Case 12: Conversational acknowledgments & pleasantries handled gracefully without repetition")
 
+def test_13_cross_session_topic_cache_isolation():
+    import uuid
+    sess_a = f"sess-a-{uuid.uuid4()}"
+    sess_b = f"sess-b-{uuid.uuid4()}"
+
+    # Session A discusses water bottle -> active topic IS 17803:2022
+    get_or_create_session(sess_a)
+    update_session(sess_a, active_topic="IS 17803:2022")
+    # Session B discusses helmet -> active topic IS 4151:2015
+    get_or_create_session(sess_b)
+    update_session(sess_b, active_topic="IS 4151:2015")
+
+    generic_query = f"where can I get it tested? {uuid.uuid4()}"
+
+    # Session A writes its tested result into cache with context_topic = IS 17803:2022
+    mock_resp_a = {
+        "intent": "LAB_SEARCH",
+        "answer": "Bottles under IS 17803:2022 can be tested at BIS Central Lab Sahibabad.",
+        "what_it_means": "Food contact testing.",
+        "next_action": "Submit bottle samples via Manak Online.",
+        "evidence_tag": {"status": "confirmed"}
+    }
+    write_cache(
+        generic_query,
+        "en",
+        mock_resp_a,
+        active_topic="IS 17803:2022",
+        persona="general",
+        context_topic="IS 17803:2022"
+    )
+
+    # Session A checks cache with its own context topic -> HITS!
+    hit_a, topic_a = check_cache(generic_query, "en", persona="general", active_topic="IS 17803:2022") or (None, None)
+    assert hit_a is not None, "Session A must hit its own contextual cache"
+    assert "17803" in hit_a["answer"]
+
+    # Session B checks cache with helmet context topic -> MUST MISS!
+    hit_b, topic_b = check_cache(generic_query, "en", persona="general", active_topic="IS 4151:2015") or (None, None)
+    assert hit_b is None, "Session B must NEVER hit Session A's bottle cache for generic follow-up"
+
+    # Now Session B caches its helmet response
+    mock_resp_b = {
+        "intent": "LAB_SEARCH",
+        "answer": "Helmets under IS 4151:2015 can be tested at BIS Western Regional Lab Mumbai and ARAI Pune.",
+        "what_it_means": "Protective helmet impact testing.",
+        "next_action": "Submit helmet prototypes via Manak Online.",
+        "evidence_tag": {"status": "confirmed"}
+    }
+    write_cache(
+        generic_query,
+        "en",
+        mock_resp_b,
+        active_topic="IS 4151:2015",
+        persona="general",
+        context_topic="IS 4151:2015"
+    )
+
+    # Now verify bidirectional isolation:
+    # Session A still gets bottle answer:
+    hit_a2, _ = check_cache(generic_query, "en", persona="general", active_topic="IS 17803:2022") or (None, None)
+    assert hit_a2 is not None
+    assert "17803" in hit_a2["answer"]
+
+    # Session B gets helmet answer:
+    hit_b2, _ = check_cache(generic_query, "en", persona="general", active_topic="IS 4151:2015") or (None, None)
+    assert hit_b2 is not None
+    assert "4151" in hit_b2["answer"]
+
+    # Verify Session B's active topic in DB remains helmet
+    sess_b_data = get_or_create_session(sess_b)
+    assert sess_b_data["active_topic"] == "IS 4151:2015", "Session B active topic must remain intact"
+    print("[PASS] Edge Case 13: Cross-session cache poisoning prevented by context-topic keying")
+
+def test_14_lab_search_intent_routing_variations():
+    lab_queries = [
+        "where can I get it tested?",
+        "where to get this tested",
+        "where do i get it tested",
+        "where can this be tested",
+        "where to test it",
+        "how can i test it",
+        "where can i get tested",
+        "testing facility near me",
+        "test centres in delhi"
+    ]
+    for q in lab_queries:
+        r = route_intent(q)
+        assert r["intent"] == "LAB_SEARCH", f"Query '{q}' misrouted to {r['intent']}"
+        assert r["method"] == "regex_fastpath", f"Query '{q}' did not use fastpath"
+    print("[PASS] Edge Case 14: All lab-search follow-up variations route to LAB_SEARCH via regex fast-path")
+
+def test_15_voluntary_standard_handling():
+    # Test municipal tap water standard (IS 10500:2012)
+    chain = run_compliance_chain("municipal drinking water")
+    assert chain["standard"]["is_code"] == "IS 10500:2012"
+    assert "voluntary" in chain["qco_status"].lower()
+    assert chain["scheme"]["name"] == "Voluntary Compliance / Optional Scheme-I"
+    assert chain["steps"][0]["scheme"] == "Voluntary"
+    assert "mandatory compliance enforced" not in chain["evidence_tag"]["clause_summary"].lower()
+    assert "voluntary" in chain["evidence_tag"]["clause_summary"].lower()
+
+    # Verify synthesis handles voluntary status correctly
+    synth = deterministic_synthesis(chain, "is drinking water certified by bis", "en")
+    assert "VOLUNTARY" in synth["answer"]
+    assert "not enforced" in synth["what_it_means"].lower() or "voluntary" in synth["what_it_means"].lower()
+    print("[PASS] Edge Case 15: Voluntary standards correctly classified without mandatory QCO enforcement")
+
 if __name__ == "__main__":
     test_1_directory_without_deep_clause()
     test_2_deep_clause_non_flagship_boundary()
@@ -226,4 +333,7 @@ if __name__ == "__main__":
     test_10_deterministic_failover()
     test_11_persona_cache_and_response_isolation()
     test_12_conversational_acknowledgments_and_thanks()
-    print("\nALL 12 SPECIFICATION & PERSONA EDGE-CASE TESTS PASSED!")
+    test_13_cross_session_topic_cache_isolation()
+    test_14_lab_search_intent_routing_variations()
+    test_15_voluntary_standard_handling()
+    print("\nALL 15 SPECIFICATION & PERSONA EDGE-CASE TESTS PASSED!")

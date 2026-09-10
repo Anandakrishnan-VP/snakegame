@@ -45,7 +45,7 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
   }, [search, division]);
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '10px' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '10px' }}>
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
         <div style={{
           display: 'inline-flex',
@@ -120,9 +120,9 @@ export default function DirectoryBrowser({ onSelectStandard, currentLang = 'en',
       </div>
 
       {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: '16px' }}>
+      <div className="directory-grid">
         {standards.map((s) => (
-          <div key={s.is_code} className="glass-card" style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div key={s.is_code} className="glass-card" style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
                 <span style={{

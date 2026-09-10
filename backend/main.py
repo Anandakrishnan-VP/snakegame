@@ -266,6 +266,24 @@ def augment_query_if_followup(query: str, active_topic: Optional[str]) -> str:
 
     return f"{active_topic} {query}"
 
+def is_followup_query(query: str) -> bool:
+    """
+    Determines if a query depends on session context (active topic)
+    rather than being a standalone query (e.g. product search, verification, or general FAQ).
+    """
+    if not query:
+        return False
+    if is_general_inquiry(query):
+        return False
+    if re.search(r'\b(?:cml\s*\d{6,8}|cm/l\s*[-/]?\s*\d{6,8}|r-\d{8})\b', query.lower()):
+        return False
+    lower = query.lower().strip()
+    if re.search(r'\b(?:it|its|this|that|these|them|the product|the item|the standard|the licence|the license|the lab|the labs|the steps|same|above|here|there)\b', lower):
+        return True
+    if re.search(r'\b(?:where (?:is|are) (?:the )?lab|where to test|where can i (?:get )?test(?:ed)?|where can this be tested|how can i test|testing lab in|how to apply|what are the fees|how much does it cost|timeline|process|validity)\b', lower):
+        return True
+    return False
+
 @app.post("/api/chat")
 def api_chat(req: ChatRequest):
     """
@@ -379,19 +397,22 @@ def api_chat(req: ChatRequest):
         )
         return conv_resp
 
-    # Step 3: Cache Check (Language-Aware & Persona-Aware Composite Key)
-    cached_result, cached_active_topic = check_cache(raw_query, resolved_lang, persona=current_persona) or (None, None)
+    # Step 3: Cache Check (Language-Aware & Persona-Aware Composite Key with Context Topic)
+    context_topic = active_topic if (active_topic and is_followup_query(raw_query)) else None
+    cached_result, cached_active_topic = check_cache(raw_query, resolved_lang, persona=current_persona, active_topic=context_topic) or (None, None)
     if cached_result:
         # Crucial §3.2 rule: Update turn and active topic even on cache hit!
+        # If session already had active_topic, preserve it unless cached entry established a fresh topic
+        effective_topic = active_topic or cached_active_topic
         turn_rec = {
             "query": raw_query,
             "intent": cached_result.get("intent", "CACHE_HIT"),
-            "active_topic": cached_active_topic or active_topic,
+            "active_topic": effective_topic,
             "language": resolved_lang
         }
         update_session(
             session_id,
-            active_topic=cached_active_topic or active_topic,
+            active_topic=effective_topic,
             persona=current_persona,
             language=resolved_lang,
             turn_record=turn_rec,
@@ -399,6 +420,9 @@ def api_chat(req: ChatRequest):
         )
         cached_result["from_cache"] = True
         cached_result["session_id"] = session_id
+        cached_result["intent"] = cached_result.get("intent", "CACHE_HIT")
+        cached_result["active_topic"] = effective_topic
+        cached_result["resolved_language"] = resolved_lang
         return cached_result
 
     # Step 4: Translate to English for Retrieval
@@ -447,15 +471,31 @@ def api_chat(req: ChatRequest):
             resolved_standard_code = ver_result["is_code"]
 
     elif intent == "LAB_SEARCH":
-        labs = find_testing_labs(is_code=active_topic, city=req.city, state=req.state)
+        target_code = active_topic
+        if not target_code:
+            from backend.services.module2_matcher import extract_is_code
+            extracted = extract_is_code(augmented_query)
+            if extracted:
+                target_code = extracted
+            else:
+                cands = search_directory(english_query)
+                if cands and cands[0]["score"] >= 5.0:
+                    target_code = cands[0]["is_code"]
+        if target_code:
+            resolved_standard_code = target_code
+
+        std_info = get_standard_by_code(target_code) if target_code else None
+
+        labs = find_testing_labs(is_code=target_code, city=req.city, state=req.state)
         context_payload = {
             "intent": "LAB_SEARCH",
-            "standard_code": active_topic,
+            "standard_code": target_code,
+            "standard_title": std_info.get("title") if std_info else None,
             "labs": labs[:5],
             "persona": current_persona,
             "evidence_tag": {
                 "source_type": "directory",
-                "reference": active_topic or "BIS Recognized Testing Labs",
+                "reference": target_code or "BIS Recognized Testing Labs",
                 "status": "confirmed" if labs else "not determined",
                 "clause_summary": f"Found {len(labs)} accredited testing facilities mapped in the BIS Laboratory Recognition Scheme.",
                 "verbatim_excerpt": f"Found {len(labs)} accredited testing facilities mapped in the BIS Laboratory Recognition Scheme.",
@@ -602,7 +642,15 @@ def api_chat(req: ChatRequest):
         increment_turn=True
     )
     if not response_data.get("guardrail_refusal"):
-        write_cache(raw_query, resolved_lang, response_data, active_topic=resolved_standard_code, persona=current_persona)
+        context_topic = active_topic if (active_topic and is_followup_query(raw_query)) else None
+        write_cache(
+            raw_query,
+            resolved_lang,
+            response_data,
+            active_topic=resolved_standard_code,
+            persona=current_persona,
+            context_topic=context_topic
+        )
 
     return response_data
 

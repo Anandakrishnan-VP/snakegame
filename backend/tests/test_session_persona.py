@@ -52,5 +52,66 @@ def test_persona_and_turn_history_persistence():
 
     print("\nSession persistence test PASSED successfully!")
 
+def test_cross_session_live_chat_isolation():
+    sess_a = f"test-sess-a-{uuid.uuid4().hex[:8]}"
+    sess_b = f"test-sess-b-{uuid.uuid4().hex[:8]}"
+
+    # Turn 1: Session A asks about bottle
+    res_a1 = client.post("/api/chat", json={
+        "query": "stainless steel water bottle",
+        "session_id": sess_a,
+        "persona": "general",
+        "language": "en"
+    })
+    assert res_a1.status_code == 200
+    data_a1 = res_a1.json()
+    assert "17803" in (data_a1.get("active_topic") or "") or "17803" in json.dumps(data_a1)
+
+    # Turn 2: Session A asks generic follow-up "where can I get it tested?"
+    res_a2 = client.post("/api/chat", json={
+        "query": "where can I get it tested?",
+        "session_id": sess_a,
+        "persona": "general",
+        "language": "en"
+    })
+    assert res_a2.status_code == 200
+    data_a2 = res_a2.json()
+    assert data_a2["intent"] == "LAB_SEARCH"
+    assert data_a2.get("active_topic") == "IS 17803:2022"
+
+    # Turn 1: Session B asks about helmets
+    res_b1 = client.post("/api/chat", json={
+        "query": "two wheeler helmet standards",
+        "session_id": sess_b,
+        "persona": "general",
+        "language": "en"
+    })
+    assert res_b1.status_code == 200
+    data_b1 = res_b1.json()
+    assert "4151" in (data_b1.get("active_topic") or "") or "4151" in json.dumps(data_b1)
+
+    # Turn 2: Session B asks the EXACT SAME generic follow-up "where can I get it tested?"
+    res_b2 = client.post("/api/chat", json={
+        "query": "where can I get it tested?",
+        "session_id": sess_b,
+        "persona": "general",
+        "language": "en"
+    })
+    assert res_b2.status_code == 200
+    data_b2 = res_b2.json()
+
+    # Session B MUST NOT get Session A's cached bottle answer!
+    assert data_b2["intent"] == "LAB_SEARCH", f"Expected LAB_SEARCH, got {data_b2['intent']}"
+    assert "No registered Indian Standard found" not in json.dumps(data_b2), "Must not return 'No standard found' error"
+    assert data_b2.get("active_topic") == "IS 4151:2015", f"Expected active_topic IS 4151:2015, got {data_b2.get('active_topic')}"
+    
+    # Session B state in SQLite must still be helmets
+    sess_b_db = get_or_create_session(sess_b)
+    assert sess_b_db["active_topic"] == "IS 4151:2015", f"Session B DB active_topic poisoned: {sess_b_db['active_topic']}"
+
+    print("\nCross-session live chat isolation test PASSED successfully!")
+
 if __name__ == "__main__":
+    import json
     test_persona_and_turn_history_persistence()
+    test_cross_session_live_chat_isolation()

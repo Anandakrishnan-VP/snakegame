@@ -143,14 +143,26 @@ def match_product_to_standard(query: str) -> Dict[str, Any]:
         title_lower = cand["title"].lower()
         synonyms_lower = cand["synonyms"].lower()
 
-        if attributes["category"] and (attributes["category"] in title_lower or attributes["category"] in synonyms_lower):
-            boost += 10.0
+        if attributes["category"]:
+            if (attributes["category"] in title_lower or attributes["category"] in synonyms_lower):
+                boost += 20.0
+            else:
+                boost -= 10.0
 
         if attributes["material"] and (attributes["material"] in title_lower or attributes["material"] in synonyms_lower):
             boost += 8.0
 
         if attributes["user_context"] and (attributes["user_context"] in title_lower or attributes["user_context"] in synonyms_lower):
             boost += 6.0
+
+        # Toy category flagship disambiguation: IS 9873 is primary unless electric/battery specified
+        if "toy" in title_lower:
+            if "electric" in query.lower() or "battery" in query.lower():
+                if "electric" in title_lower:
+                    boost += 10.0
+            else:
+                if "9873" in cand["is_code"]:
+                    boost += 10.0
 
         cand["score"] += boost
         cand["attribute_boost"] = boost

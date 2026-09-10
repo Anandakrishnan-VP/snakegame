@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { 
   MessageSquare, 
   ShieldCheck, 
@@ -46,6 +46,67 @@ export default function App() {
   const [bulletinData, setBulletinData] = useState(null);
   const [isBulletinRefreshing, setIsBulletinRefreshing] = useState(false);
   const [isAlertDismissed, setIsAlertDismissed] = useState(false);
+
+  // Unread notifications management (persisted in localStorage)
+  const [readNoticeIds, setReadNoticeIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bis_read_notice_ids');
+      if (saved) {
+        return new Set(JSON.parse(saved));
+      }
+    } catch (e) {}
+    return null; // null indicates initial visit before any view
+  });
+
+  // Calculate dynamic unread count (on first visit, defaults to top 2 notices, 0 once viewed)
+  const unreadCount = useMemo(() => {
+    if (!bulletinData?.notices?.length) return 0;
+    if (readNoticeIds === null) {
+      return Math.min(2, bulletinData.notices.length);
+    }
+    return bulletinData.notices.filter(n => !readNoticeIds.has(n.id)).length;
+  }, [bulletinData, readNoticeIds]);
+
+  const handleOpenBulletin = () => {
+    setIsBulletinOpen(true);
+    // Mark all current notices as read when the user views the bulletin
+    if (bulletinData?.notices?.length) {
+      const allIds = new Set(bulletinData.notices.map(n => n.id));
+      setReadNoticeIds(allIds);
+      try {
+        localStorage.setItem('bis_read_notice_ids', JSON.stringify(Array.from(allIds)));
+      } catch (e) {}
+    }
+  };
+
+  const handleMarkAllRead = () => {
+    if (bulletinData?.notices?.length) {
+      const allIds = new Set(bulletinData.notices.map(n => n.id));
+      setReadNoticeIds(allIds);
+      try {
+        localStorage.setItem('bis_read_notice_ids', JSON.stringify(Array.from(allIds)));
+      } catch (e) {}
+    }
+  };
+
+  const handleMarkAllUnread = () => {
+    if (bulletinData?.notices?.length) {
+      // Mark top 2 urgent notices as unread for live demo to judges
+      const olderIds = new Set(bulletinData.notices.slice(2).map(n => n.id));
+      setReadNoticeIds(olderIds);
+      try {
+        localStorage.setItem('bis_read_notice_ids', JSON.stringify(Array.from(olderIds)));
+      } catch (e) {}
+    }
+  };
+
+  const isNoticeUnread = (notice, index) => {
+    if (!notice) return false;
+    if (readNoticeIds === null) {
+      return index < 2;
+    }
+    return !readNoticeIds.has(notice.id);
+  };
 
   const fetchBulletin = async (refresh = false) => {
     if (refresh) setIsBulletinRefreshing(true);
@@ -237,7 +298,7 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: 'auto' }}>
             {/* Live Gazette Notices Icon Button */}
             <button
-              onClick={() => setIsBulletinOpen(true)}
+              onClick={handleOpenBulletin}
               title={t('bulletin_title') || 'View Live Government Gazette Notices & QCOs'}
               style={{
                 display: 'flex',
@@ -264,7 +325,7 @@ export default function App() {
               }}
             >
               <Bell size={16} color="var(--accent-aqua)" />
-              {bulletinData?.notices?.length > 0 && (
+              {unreadCount > 0 && (
                 <span style={{
                   position: 'absolute',
                   top: '-4px',
@@ -278,7 +339,7 @@ export default function App() {
                   boxShadow: '0 2px 6px rgba(13, 148, 136, 0.4)',
                   lineHeight: 1.2
                 }}>
-                  {bulletinData.notices.length}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
@@ -402,7 +463,7 @@ export default function App() {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
               <button
-                onClick={() => setIsBulletinOpen(true)}
+                onClick={handleOpenBulletin}
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
@@ -418,7 +479,7 @@ export default function App() {
                   transition: 'all 0.15s ease'
                 }}
               >
-                {t('view_gazette_bulletin')} ({bulletinData.notices.length}) →
+                {t('view_gazette_bulletin')} {unreadCount > 0 ? `(${unreadCount} new)` : ''} →
               </button>
               <button
                 onClick={() => setIsAlertDismissed(true)}
@@ -477,7 +538,6 @@ export default function App() {
             initialQuery={initialChatQuery}
             onClearInitialQuery={() => setInitialChatQuery('')}
             currentLang={currentLang}
-            setCurrentLang={setCurrentLang}
             t={t}
           />
         </div>
@@ -537,6 +597,11 @@ export default function App() {
           window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         }}
         t={t}
+        readNoticeIds={readNoticeIds}
+        unreadCount={unreadCount}
+        isNoticeUnread={isNoticeUnread}
+        onMarkAllRead={handleMarkAllRead}
+        onMarkAllUnread={handleMarkAllUnread}
       />
     </div>
   );

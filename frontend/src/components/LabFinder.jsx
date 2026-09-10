@@ -166,9 +166,9 @@ export default function LabFinder({ currentLang = 'en', t = (k) => k }) {
       )}
 
       {/* Labs List */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: '16px' }}>
+      <div className="two-column-grid">
         {labs.map((lab) => (
-          <div key={lab.lab_id} className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div key={lab.lab_id} className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
             <div>
               {lab.fallback_note && (
                 <div style={{

@@ -71,6 +71,16 @@ def get_scheme_overview(scheme: str) -> Dict[str, Any]:
             "audit_required": True,
             "msme_benefit": "Requires mandatory Authorized Indian Representative (AIR) and Performance Bank Guarantee.",
             "indicative_duration": "90–120 days (dependent on international auditor travel)"
+        },
+        "Voluntary": {
+            "name": "Voluntary Compliance / Optional Scheme-I",
+            "governing_law": "Voluntary Adoption (No mandatory QCO enforcement)",
+            "target": "Domestic & Foreign Manufacturers seeking voluntary quality assurance",
+            "portal": "https://www.manakonline.in",
+            "form": "Form V (e-BIS Portal - Optional)",
+            "audit_required": False,
+            "msme_benefit": "Standard MSME fee concessions apply if voluntary Scheme-I ISI mark is pursued.",
+            "indicative_duration": "Voluntary compliance is self-determined unless formal ISI mark is requested."
         }
     }
     return overviews.get(scheme, overviews["Scheme-I"])
