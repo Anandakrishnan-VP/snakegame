@@ -7,11 +7,11 @@
 [![Vite](https://img.shields.io/badge/Vite-6.0-646CFF.svg)](https://vitejs.dev/)
 [![Groq](https://img.shields.io/badge/LLM-Groq%20Cloud-F05A28.svg)](https://groq.com/)
 [![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20Supabase%20Postgres-336791.svg)](https://sqlite.org/)
-[![Languages](https://img.shields.io/badge/Languages-12%20Indian%20Languages-green.svg)](#-12-major-indian-languages--voice-input)
+[![Languages](https://img.shields.io/badge/Languages-12%20Indian%20Languages-green.svg)](#-5-12-major-indian-languages--voice-input)
 
 ---
 
-**BIS Saathi** is an AI-powered compliance intelligence system purpose-built for the **Bureau of Indian Standards (BIS)**. It bridges the gap between 21,000+ Indian Standards, statutory Quality Control Orders (QCOs), certification schemes, and testing laboratories for **MSMEs, startups, manufacturers, and everyday consumers**.
+**BIS Saathi** is an enterprise-grade AI compliance intelligence system purpose-built for the **Bureau of Indian Standards (BIS)**. It bridges the gap between 21,000+ Indian Standards, statutory Quality Control Orders (QCOs), certification schemes, testing laboratories, and registry verification for **MSMEs, startups, manufacturers, and everyday consumers**.
 
 > 💡 **Architectural Philosophy:**  
 > **"The LLM is the linguistic interface, NOT the system of record."**  
@@ -25,9 +25,9 @@
 - [Quick Start Guide](#-quick-start-guide)
 - [How to Use BIS Saathi](#-how-to-use-bis-saathi)
 - [Database Configuration (SQLite vs Supabase)](#-database-configuration)
-- [Automated Testing](#-automated-testing)
+- [Automated Testing Suite](#-automated-testing-suite)
 - [Project Directory Structure](#-project-directory-structure)
-- [Cloud Deployment (Vercel)](#-cloud-deployment-vercel)
+- [Cloud Deployment (Vercel & Supabase)](#-cloud-deployment-vercel--supabase)
 - [Technical Documentation](#-technical-documentation)
 
 ---
@@ -35,32 +35,54 @@
 ## 🌟 Key Features
 
 ### 1. 🔗 The Connected Compliance Chain
-One connected single-turn journey that eliminates regulatory guesswork:
+A seamless single-turn workflow that eliminates regulatory ambiguity:
 $$\text{Product Query} \longrightarrow \text{Attribute Match} \longrightarrow \text{Indian Standard (IS)} \longrightarrow \text{QCO Status} \longrightarrow \text{Scheme-I Steps} \longrightarrow \text{Testing Labs}$$
+- Supports 3-letter product tokens (`toy`, `gas`, `rod`, `bar`, `pvc`) with intelligent category boosting.
+- Distinguishes **Mandatory QCOs** from **Voluntary Standards** (e.g. `IS 10500:2012` municipal drinking water), avoiding misleading mandatory enforcement alerts on optional standards.
 
 ### 2. 🔍 "Tap-to-Inspect" Clause & Source Inspector
-- Every recommendation is tagged with an evidence indicator (`confirmed`, `needs verification`, `not determined`).
-- Click any **"Tap to Inspect Clause & Order"** badge to open the inspector modal displaying verbatim clause text, publication page, and Gazetted S.O. orders.
+- Every advisory is tagged with an evidence indicator (`confirmed`, `needs verification`, `not determined`).
+- Click any **"Tap to Inspect Clause & Order"** badge to inspect verbatim clause text, publication page, and Gazetted S.O. orders retrieved directly from official BIS specifications.
 
-### 3. 🛡️ Real-Time Verification Hub
-- **BIS CM/L Licences:** Prefix-first CM/L licence extraction and registry verification (e.g., `CML1234567`).
-- **Gold Hallmark HUID:** 6-character alphanumeric Hallmarking Unique ID verification (e.g., `AB1234`).
-- **Electronics CRS:** Compulsory Registration Scheme R-Numbers (e.g., `R-41001234`).
+### 3. 🛡️ Real-Time Registry Verification Hub
+- **BIS CM/L Licences:** Prefix-first CM/L licence extraction and registry verification (e.g., `CML1234567`) showing licensee details, product scope, and expiry.
+- **Gold Hallmark HUID:** 6-character alphanumeric Hallmarking Unique ID verification (e.g., `AB1234`) displaying purity (916/22K, 750/18K), assaying center, and registration date.
+- **Electronics CRS:** Compulsory Registration Scheme R-Numbers (e.g., `R-41001234`) with model approvals and validity.
 
-### 4. 🏢 Hierarchical Testing Lab Locator
-- Search 130+ BIS and NABL-recognized testing laboratories.
-- Hierarchical fallback: matches labs by city first, expands to state, and falls back to central national laboratories.
+### 4. 📢 Live Government Gazette Notices & QCO Bulletin
+- **Live Gazette Sync:** Fetches official Ministry gazetted notifications and Quality Control Orders from live government feeds.
+- **Notification Bell & Unread Tracking:** Dynamic badge counter showing new notifications with persistent read/unread state in local storage.
+- **Status Filtering:** Quickly filter orders by **Extended**, **Upcoming Enforcements**, or **Active** standards.
+- **Interactive Judge Demo Toggle:** Easily toggle unread notification state for live presentations.
 
-### 5. 🌐 12 Major Indian Languages & Voice Input
-- Full localization in **12 Indian languages**: English, Hindi (हिन्दी), Tamil (தமிழ்), Telugu (తెలుగు), Marathi (मराठी), Bengali (বাংলা), Gujarati (ગુજરાતી), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), Punjabi (ਪੰਜਾਬੀ), Odia (ଓଡ଼ିଆ), and Urdu (اردو).
-- **Indic Voice-to-Text:** Real-time speech input powered by Groq Whisper Large v3.
-- **Protected Technical Tokens:** Standard numbers (`IS 17803:2022`), units, and HUID codes are shielded from mistranslation.
+### 5. 🗺️ End-to-End Certification Journey & Official PDF Export
+- **Step-by-Step Roadmaps:** Tailored for **Scheme-I Domestic Manufacturers**, **CRS Electronics Importers**, and **Consumer Verify & Protect**.
+- **Interactive Progress Tracker:** Check off milestones (Sample Preparation, NABL Lab Testing, Manak Online Form V, Factory Audit) with instant readiness score updates (0% to 100%).
+- **Official PDF Generation:** Download a publication-ready compliance report and roadmap powered by ReportLab (`/api/journey/pdf`).
 
-### 6. ⚡ Dual-Engine Database Architecture
+### 6. 📸 Vision AI & Camera Inspector (VLM)
+- Inspect physical products directly using live camera capture or device photo uploads.
+- Evaluates ISI Mark logos, Gold Hallmarks, and BIS label plates for authenticity and mandatory labeling compliance.
+
+### 7. 🌐 12 Major Indian Languages & Voice Input
+- **Full UI & Advisory Localization:** English, Hindi (हिन्दी), Tamil (தமிழ்), Telugu (తెలుగు), Marathi (मराठी), Bengali (বাংলা), Gujarati (ગુજરાતી), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), Punjabi (ਪੰਜਾਬੀ), Odia (ଓଡ଼ିଆ), and Urdu (اردو).
+- **Indic Voice-to-Text:** Real-time speech recognition powered by Groq Whisper Large v3.
+- **Protected Technical Tokens:** Standard designations (`IS 17803:2022`), units, and HUID codes are shielded from mistranslation.
+- **Overflow-Protected Navbar:** Responsive header pins the single global language switcher and gazette controls, ensuring zero layout breakages on lengthy scripts (e.g. Malayalam).
+
+### 8. 🧠 Context-Aware Topic Memory & Zero Cache Poisoning
+- **Context-Topic Cache Isolation:** Follow-up queries (e.g. *"where can I get it tested?"*) are keyed on `norm(query)::lang::persona::context_topic`, preventing cross-session topic poisoning.
+- **Natural Lab-Search Intent Routing:** Regex fast-path catches natural inquiries (*"where can I get it tested?"*, *"where to get this tested"*, *"testing facilities"*) and inherits active topic standards without fallback errors.
+
+### 9. 📚 Responsive Two-Card Standards Directory
+- Browse the Indian Standards directory filtered by divisions (Consumer Products, Electronics, Transport, Food, Civil, Metallurgical, Electrotechnical).
+- Clean, consistent **two-card list layout** (`.directory-grid`) on desktop and tablets that never collapses into a single full-width stretched card.
+
+### 10. ⚡ Dual-Engine Database Architecture
 - **Local Dev / Offline:** Runs at **0ms** latency using local SQLite (`backend/bis_saathi.db`) with complete offline fallback synthesis.
 - **Cloud / Multi-Device:** Optional connection to **Supabase PostgreSQL** for persistent multi-device sessions and cloud deployments.
 
-### 7. 🛡️ Tri-Shield Safety Guardrails
+### 11. 🛡️ Tri-Shield Safety Guardrails
 1. **Pre-Guardrail:** Prompt injection interceptor and out-of-scope regulatory boundary enforcement.
 2. **Deterministic Grounding:** Database-retrieved evidence passed directly into Groq LLM context.
 3. **Post-Guardrail:** Hallucination validator verifying all cited IS codes against the database.
@@ -73,23 +95,27 @@ $$\text{Product Query} \longrightarrow \text{Attribute Match} \longrightarrow \t
 flowchart TD
     subgraph Client["Frontend Client (React 19 + Vite)"]
         UI["Glassmorphic Responsive UI"]
-        Lang["12 Indian Languages Switcher"]
+        Lang["12 Indian Languages Switcher (Single Navbar)"]
         Tabs["Advisor | Verify | Lab Finder | Directory | Journey"]
         Voice["Groq Whisper Large v3 Voice Input"]
+        VLM["Live Camera & Image Inspector"]
+        GazetteModal["Live Gazette & QCO Bulletin Modal"]
     end
 
     subgraph API["FastAPI Backend Gateway (Port 8000)"]
         PreGuard["Layer 1: Adversarial & Scope Refusal Guardrail"]
         LangResolve["Language Detection & Token Shielding"]
-        Cache["Language-Aware Composite Key Cache"]
+        Cache["Context-Topic Composite Key Cache"]
         Router["Regex Fast-Path & TF-IDF Semantic Intent Router"]
         
         subgraph Chain["The Compliance Chain Engine"]
-            M2["Module 2: Attribute & Keyword Matcher"]
+            M2["Module 2: Attribute & Keyword Matcher (3-Letter Tokens)"]
             M1["Module 1: Standards Directory & Tier B Clauses"]
-            M3["Module 3: Certification Scheme Mapper"]
+            M3["Module 3: Certification Schemes (Scheme-I / CRS / Voluntary)"]
             M4["Module 4: Deterministic Registry Verifier"]
-            M5["Module 5: Hierarchical Lab Locator"]
+            M5["Module 5: Hierarchical Lab Locator (City -> State -> Central)"]
+            QCO["Gazette Bulletin Live Scraper & Feed"]
+            Journey["Journey Progress & ReportLab PDF Generator"]
         end
 
         Synth["Groq Cloud LLM Synthesizer (LLaMA 3.3 70B)"]
@@ -127,7 +153,7 @@ cd snakegame
 ---
 
 ### Step 2: Set Up Backend
-1. Create and activate a Python virtual environment (recommended):
+1. Create and activate a Python virtual environment:
    ```powershell
    # Windows (PowerShell)
    python -m venv venv
@@ -174,7 +200,7 @@ Double-click **`run_servers.bat`** in the root directory. It automatically opens
 ```powershell
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-*Backend API runs at: `http://127.0.0.1:8000` (Docs: `http://127.0.0.1:8000/docs`)*
+*Backend API runs at: `http://127.0.0.1:8000` (Swagger Docs: `http://127.0.0.1:8000/docs`)*
 
 **Terminal 2 — Frontend (React + Vite):**
 ```powershell
@@ -190,29 +216,34 @@ Open **`http://localhost:5173`** in your browser to start using BIS Saathi!
 ## 📖 How to Use BIS Saathi
 
 ### 1. 💬 AI Compliance Advisor (Chat Tab)
-- **Select Persona:** Toggle between **MSME / Manufacturer** (compliance steps, licensing, testing costs) and **Consumer** (quality assurance, hallmark checks, complaint filing).
-- **Search by Product:** Type what you manufacture or want to buy (e.g., *"I make stainless steel vacuum water bottles for children"* or *"Are helmets mandatory under BIS?"*).
-- **Ask Follow-Ups with Context:** The active-topic memory tracks previous turns. You can ask: *"Where can I test this in Mumbai?"* without repeating the standard name.
-- **Inspect Citations:** Click the **"Tap to Inspect Clause & Order"** badge on any response to see the exact BIS gazetted notification, clause text, and page references.
-- **Voice Query:** Click the microphone icon to speak your question in any supported Indian language.
+- **Select Persona:** Toggle between **MSME / Manufacturer** (licensing steps, testing costs, concessions) and **Consumer** (quality marks, hallmark checks, complaint procedures).
+- **Search by Product:** Describe what you manufacture or wish to purchase (e.g., *"I make stainless steel vacuum flasks for children"* or *"Are two-wheeler helmets mandatory under BIS?"*).
+- **Ask Follow-Ups with Context:** The conversation memory tracks the active standard. You can simply ask: *"Where can I get it tested?"* without repeating the standard code.
+- **Inspect Citations:** Click the **"Tap to Inspect Clause & Order"** badge to inspect the exact gazetted notification, clause text, and page references.
+- **Voice & Camera AI:** Click the microphone icon for speech input in any of the 12 languages, or the camera icon to inspect physical mark labels.
 
-### 2. 🔍 Verify Licence / HUID (Verification Tab)
+### 2. 🔍 Verify Licence / HUID / CRS (Verification Tab)
 - **Check CM/L Number:** Enter any 7-to-8 digit BIS Licence number (e.g., `CML1234567`) to verify manufacturer validity, brand, standard, and expiry.
 - **Verify Gold Hallmark:** Enter a 6-character alphanumeric HUID code (e.g., `AB1234`) to verify purity (916/22K, 750/18K), assaying center, and registration date.
-- **Check CRS Electronics:** Enter an R-number (e.g., `R-41001234`) to check electronics registration status under Compulsory Registration Scheme.
+- **Check CRS Electronics:** Enter an R-number (e.g., `R-41001234`) to check registration status under the Compulsory Registration Scheme.
 
 ### 3. 🧪 Testing Laboratory Finder (Lab Finder Tab)
 - Search testing labs by **Indian Standard** (e.g., `IS 17803`), **City** (e.g., `Mumbai`, `Bengaluru`), or **State**.
 - View complete lab profiles, NABL accreditation status, contact details, and testing scope.
 
 ### 4. 📚 Standards Directory (Directory Tab)
-- Search and browse through Indian Standards.
-- Filter by **Mandatory QCOs** to see which products require compulsory BIS certification before sale or import in India.
-- View publication dates, gazetted order numbers, and applicable certification schemes.
+- Search and browse through Indian Standards in a clean **two-card list layout**.
+- Filter by division (Consumer Products, Electronics, Transport, Food, Civil, Metallurgical, Electrotechnical) or search by IS code/keywords.
+- Inspect mandatory QCO order dates, gazetted order numbers, and applicable certification schemes.
 
-### 5. 🗺️ My Journey (Journey Tab)
+### 5. 🗺️ My Certification Journey (Journey Tab)
 - Track your step-by-step compliance roadmap from initial inquiry to final ISI Mark / CRS grant.
 - Check off completed milestones (sample preparation, testing, factory audit, licence grant).
+- Download your official compliance roadmap as a publication-ready PDF.
+
+### 6. 📢 Live Gazette Bulletin (Top Navbar Bell)
+- Click the notification bell in the top navbar to view the latest Quality Control Orders and gazetted amendments.
+- Filter by extended or upcoming orders, or click **"Sync with Live Gazette"** to refresh.
 
 ---
 
@@ -247,18 +278,30 @@ The app will automatically use `backend/bis_saathi.db`.
 
 ---
 
-## 🧪 Automated Testing
+## 🧪 Automated Testing Suite
 
-Run the automated test suite to verify core logic, edge cases, and API endpoints:
+BIS Saathi includes an exhaustive automated test suite covering unit logic, edge cases, session persistence, journey services, and guardrails:
 
 ```powershell
-# 1. Core Module Tests (Directory, Matcher, Schemes, Verification, Labs)
+# 1. Specification & Persona Edge-Case Tests (All 15 Edge Cases - 100% Pass)
+python backend/tests/test_edge_cases.py
+
+# 2. Live Multi-Turn Session Persona Persistence & Cross-Session Cache Isolation
+python -m backend.tests.test_session_persona
+
+# 3. Core Engine Module Tests (Directory, Matcher, Schemes, Verification, Labs)
 python -m backend.tests.test_core
 
-# 2. Specification §19 Edge-Case Tests (All 10 Edge Cases)
-python -m backend.tests.test_edge_cases
+# 4. Certification Journey & PDF Generator Tests
+python -m backend.tests.test_journey
 
-# 3. End-to-End FastAPI Endpoint Integration Tests
+# 5. Tri-Shield Guardrail & Anti-Injection Tests
+python -m backend.tests.test_guardrails
+
+# 6. Clause-Level Semantic & Keyword Retrieval Tests
+python -m backend.tests.test_clause_retrieval
+
+# 7. End-to-End FastAPI Endpoint Integration Tests
 python -m backend.tests.test_api_endpoints
 ```
 
@@ -268,55 +311,75 @@ python -m backend.tests.test_api_endpoints
 
 ```
 bis/
-├── .env.example                # Example environment variables template
-├── README.md                   # Clean project documentation & setup guide
-├── PRODUCT_INFO.md             # Comprehensive product architecture specification
-├── requirements.txt            # Python backend dependencies
-├── run_servers.bat             # One-click Windows starter for frontend + backend
-├── vercel.json                 # Vercel deployment configuration
+├── .env.example                     # Example environment variables template
+├── README.md                        # Project documentation & setup guide
+├── PRODUCT_INFO.md                  # Detailed product architecture specification
+├── requirements.txt                 # Python backend dependencies
+├── run_servers.bat                  # One-click Windows starter for frontend + backend
+├── vercel.json                      # Vercel deployment configuration
 ├── api/
-│   └── index.py                # Serverless entrypoint for cloud hosting
+│   └── index.py                     # Serverless entrypoint for cloud hosting
 ├── backend/
-│   ├── main.py                 # FastAPI application, middleware & API routes
-│   ├── bis_saathi.db           # Pre-populated SQLite database
+│   ├── main.py                      # FastAPI app, routing lifecycle & cache integration
+│   ├── bis_saathi.db                # Pre-populated SQLite database
 │   ├── db/
-│   │   ├── database.py         # Dual-engine connection adapter (SQLite / PostgreSQL)
-│   │   └── supabase_schema.sql # Cloud PostgreSQL schema DDL
+│   │   ├── database.py              # Dual-engine database adapter (SQLite / PostgreSQL)
+│   │   └── supabase_schema.sql      # Cloud PostgreSQL schema DDL
 │   ├── services/
-│   │   ├── compliance_chain.py # Connected regulatory intelligence engine
-│   │   ├── groq_service.py     # Groq LLaMA 3.3 LLM & Whisper STT client
-│   │   ├── guardrails.py       # Security, anti-injection & scope enforcement
-│   │   ├── intent_router.py    # Fast-path regex & TF-IDF query classifier
-│   │   ├── language_service.py # Indic translation & protected token shield
-│   │   ├── lab_locator.py      # Geographic lab matching engine
-│   │   ├── registry_verifier.py# Deterministic CM/L, HUID & CRS verifier
-│   │   ├── scheme_mapper.py    # BIS Scheme-I / Scheme-II workflow steps
-│   │   ├── session_manager.py  # Active-topic memory & turn tracker
-│   │   └── standards_directory.py # Tier A directory & Tier B clause search
+│   │   ├── compliance_chain.py      # Connected regulatory intelligence chain
+│   │   ├── conversational_handler.py# Pleasantry & chit-chat classifier
+│   │   ├── guardrails.py            # Security, anti-injection & scope enforcement
+│   │   ├── intent_router.py         # Regex fast-path & TF-IDF query classifier
+│   │   ├── journey_pdf.py           # ReportLab PDF roadmap export generator
+│   │   ├── journey_service.py       # Journey milestone & readiness score engine
+│   │   ├── llm_groq.py              # Groq LLaMA 3.3 LLM & deterministic synthesis
+│   │   ├── module1_directory.py     # Standards directory & Tier B clause search
+│   │   ├── module2_matcher.py       # Product attribute & keyword matching engine
+│   │   ├── module3_certification.py # BIS Scheme-I, CRS & Voluntary workflow steps
+│   │   ├── module4_verification.py  # Deterministic CM/L, HUID & CRS verifier
+│   │   ├── module5_labs.py          # Hierarchical lab locator (City -> State -> Central)
+│   │   ├── multilingual.py          # Indic translation & protected token shield
+│   │   ├── qco_bulletin.py          # Live Gazette notification scraper & feed
+│   │   ├── session_manager.py       # Context-topic memory & composite cache
+│   │   ├── transcription.py         # Groq Whisper Large v3 voice transcription
+│   │   ├── vlm_service.py           # Vision AI inspection service
+│   │   └── web_search.py            # External regulatory portal fallback search
 │   └── tests/
-│       ├── test_core.py        # Unit tests for core engine modules
-│       ├── test_edge_cases.py  # Tests for §19 edge case specifications
-│       └── test_api_endpoints.py # Integration tests for FastAPI endpoints
+│       ├── test_edge_cases.py       # Specification §19 edge case tests (15 cases)
+│       ├── test_session_persona.py  # Multi-turn persistence & cache isolation tests
+│       ├── test_core.py             # Core compliance chain module tests
+│       ├── test_journey.py          # Certification roadmap & PDF tests
+│       ├── test_guardrails.py       # Adversarial prompt injection & scope tests
+│       ├── test_clause_retrieval.py # Clause-level retrieval unit tests
+│       └── test_api_endpoints.py    # FastAPI endpoint integration tests
 ├── frontend/
-│   ├── package.json            # Node.js dependencies
-│   ├── vite.config.js          # Vite build config with backend proxy
+│   ├── package.json                 # React 19, Lucide, Vite dependencies
+│   ├── vite.config.js               # Vite build config with API proxy
 │   └── src/
-│       ├── App.jsx             # Main application container & navigation
-│       ├── index.css           # Glassmorphic UI design tokens & styling
+│       ├── App.jsx                  # Main app shell, responsive header & navigation
+│       ├── index.css                # Glassmorphic UI design tokens & two-column grid
+│       ├── api/
+│       │   └── config.js            # Dynamic backend API URL configuration
+│       ├── i18n/
+│       │   └── translations.js      # 100% key parity dictionary for 12 Indian languages
 │       └── components/
-│           ├── ChatView.jsx    # Conversational compliance assistant
-│           ├── DirectoryBrowser.jsx # Standards catalog & QCO browser
-│           ├── LabFinder.jsx   # Testing lab geographical locator
-│           ├── VerificationHub.jsx  # CM/L, HUID & CRS registry validator
-│           ├── JourneyView.jsx # Compliance milestone progress tracker
-│           └── SourceInspectorModal.jsx # Clause & Gazette inspector
+│           ├── CameraModal.jsx      # Live camera capture & image upload modal
+│           ├── ChatView.jsx         # Conversational compliance assistant
+│           ├── DirectoryBrowser.jsx # Standards catalog with responsive 2-card grid
+│           ├── Footer.jsx           # Official BIS Saathi footer & navigation links
+│           ├── JourneyView.jsx      # Compliance milestone tracker & PDF export
+│           ├── LabFinder.jsx        # Testing lab geographical locator
+│           ├── QcoBulletinModal.jsx # Live Gazette bulletin with unread badge & demo toggle
+│           ├── SourceInspectorModal.jsx # Clause & Gazette order inspector modal
+│           ├── VerificationPanel.jsx# CM/L, HUID & CRS registry verification hub
+│           └── VoiceModal.jsx       # Groq Whisper voice input modal
 └── scripts/
-    └── migrate_to_supabase.py  # SQLite to Supabase PostgreSQL migration tool
+    └── migrate_to_supabase.py       # SQLite to Supabase PostgreSQL migration tool
 ```
 
 ---
 
-## ☁️ Cloud Deployment (Vercel)
+## ☁️ Cloud Deployment (Vercel & Supabase)
 
 BIS Saathi is pre-configured for full-stack deployment on Vercel:
 
